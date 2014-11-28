@@ -237,7 +237,8 @@ public class ALECapture implements ServletContextAware {
 			XMLGregorianCalendar recordTime = df
 					.newXMLGregorianCalendar(recordCalendar);
 
-			String eventTimeZoneOffset = makeTimeZoneString(eventTime.getTimezone());
+			String eventTimeZoneOffset = makeTimeZoneString(eventTime
+					.getTimezone());
 
 			if (duration != null) {
 				Duration du = DatatypeFactory.newInstance().newDuration(
@@ -388,17 +389,18 @@ public class ALECapture implements ServletContextAware {
 			String bizLocation = request.getParameter("bizLocation");
 
 			XMLGregorianCalendar eventTime = getEventTime(ecReports);
-			
+
 			String eventTimeZoneOffset = null;
-			
-			if(eventTime.getTimezone() == -2147483648)
-			{
+
+			if (eventTime.getTimezone() == -2147483648) {
 				GregorianCalendar cal = new GregorianCalendar();
-				eventTimeZoneOffset = makeTimeZoneString(cal.getTime().getTimezoneOffset());			
-			}else{
-				eventTimeZoneOffset = makeTimeZoneString(eventTime.getTimezone());
+				eventTimeZoneOffset = makeTimeZoneString(cal.getTime()
+						.getTimezoneOffset());
+			} else {
+				eventTimeZoneOffset = makeTimeZoneString(eventTime
+						.getTimezone());
 			}
-			
+
 			GregorianCalendar recordCalendar = new GregorianCalendar();
 			DatatypeFactory df = DatatypeFactory.newInstance();
 			XMLGregorianCalendar recordTime = df
@@ -474,6 +476,18 @@ public class ALECapture implements ServletContextAware {
 
 	private XMLGregorianCalendar getEventTime(ECReports ecReports) {
 		XMLGregorianCalendar eventTime = ecReports.getCreationDate();
+		try {
+			if (eventTime == null) {
+				GregorianCalendar current = new GregorianCalendar();
+				eventTime = DatatypeFactory.newInstance()
+						.newXMLGregorianCalendar(current);
+
+			}
+		} catch (DatatypeConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 		// Example: 2014-08-11T19:57:59.717+09:00
 		// SimpleDateFormat sdf = new SimpleDateFormat(
 		// "yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
@@ -498,17 +512,14 @@ public class ALECapture implements ServletContextAware {
 			return null;
 		}
 	}
-	
-	public String makeTimeZoneString(int timeZone)
-	{
+
+	public String makeTimeZoneString(int timeZone) {
 		String retString = "";
-		timeZone = timeZone/60;
-		
-		if( timeZone >= 0 )
-		{
+		timeZone = timeZone / 60;
+
+		if (timeZone >= 0) {
 			retString = String.format("+%02d:00", timeZone);
-		}else
-		{
+		} else {
 			timeZone = Math.abs(timeZone);
 			retString = String.format("-%02d:00", timeZone);
 		}

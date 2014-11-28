@@ -1,6 +1,17 @@
 package org.oliot.epcis.service.query;
 
+import static org.oliot.epcis.service.query.mongodb.MongoQueryUtil.*;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -8,9 +19,14 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.oliot.epcis.configuration.Configuration;
 import org.oliot.epcis.service.query.mongodb.MongoQueryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.GenericXmlApplicationContext;
+import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +34,12 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.ServletContextAware;
+
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
 
 /**
  * Copyright (C) 2014 KAIST RESL
@@ -48,7 +70,6 @@ public class RESTLikeQueryService implements ServletContextAware {
 	@Override
 	public void setServletContext(ServletContext servletContext) {
 		this.servletContext = servletContext;
-
 	}
 
 	/**
@@ -311,5 +332,197 @@ public class RESTLikeQueryService implements ServletContextAware {
 	public String getVendorVersion() {
 		// It is not a version of Vendor
 		return null;
+	}
+
+	// Misc APIs for DrM
+	@RequestMapping(value = "/events", method = RequestMethod.GET)
+	@ResponseBody
+	public String getEvents(@RequestParam String epc,
+			@RequestParam(required = false) String fromTime,
+			@RequestParam(required = false) String toTime,
+			@RequestParam(required = false) String samplingUnit) {
+
+		// No validation on query, do your best effort
+
+		// Make Query Objects
+		List<DBObject> queryList = new ArrayList<DBObject>();
+		try {
+			if (fromTime != null) {
+				SimpleDateFormat sdf = new SimpleDateFormat(
+						"yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+				GregorianCalendar geEventTimeCalendar = new GregorianCalendar();
+				geEventTimeCalendar.setTime(sdf.parse(fromTime));
+				long geEventTimeMillis = geEventTimeCalendar.getTimeInMillis();
+				DBObject query = new BasicDBObject();
+				query.put("eventTime", new BasicDBObject("$gte",
+						geEventTimeMillis));
+				queryList.add(query);
+			}
+			if (toTime != null) {
+				SimpleDateFormat sdf = new SimpleDateFormat(
+						"yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+				GregorianCalendar ltEventTimeCalendar = new GregorianCalendar();
+				Date date = sdf.parse(toTime);
+				ltEventTimeCalendar.setTime(date);
+				long ltEventTimeMillis = ltEventTimeCalendar.getTimeInMillis();
+				DBObject query = new BasicDBObject();
+				query.put("eventTime", new BasicDBObject("$lt",
+						ltEventTimeMillis));
+				queryList.add(query);
+			}
+
+			if (epc != null) {
+				DBObject query = getINQueryObject(
+						new String[] { "epcList.epc" }, epc);
+				if (query != null)
+					queryList.add(query);
+			}
+		} catch (ParseException e) {
+			return e.toString();
+		}
+
+		// Field Projection
+		DBObject fields = new BasicDBObject();
+		fields.put("eventTime", 1);
+		fields.put("epcList", 1);
+		fields.put("extension", 1);
+		fields.put("_id", 0);
+
+		// Query
+		ApplicationContext ctx = new GenericXmlApplicationContext(
+				"classpath:MongoConfig.xml");
+		MongoOperations mongoOperation = (MongoOperations) ctx
+				.getBean("mongoTemplate");
+		DBCollection collection = mongoOperation.getCollection("ObjectEvent");
+
+		// Merge All the queries with $and
+		DBObject baseQuery = new BasicDBObject();
+		DBCursor cursor;
+		if (queryList.isEmpty() == false) {
+			BasicDBList aggreQueryList = new BasicDBList();
+			for (int i = 0; i < queryList.size(); i++) {
+				aggreQueryList.add(queryList.get(i));
+			}
+			baseQuery.put("$and", aggreQueryList);
+			// Query
+			cursor = collection.find(baseQuery, fields);
+		} else {
+			cursor = collection.find();
+		}
+
+		Map<String, JSONObject> retMap = new HashMap<String, JSONObject>();
+
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+
+		while (cursor.hasNext()) {
+			DBObject dbObject = cursor.next();
+			if (dbObject.containsField("extension") == true) {
+				long eventTime = (long) dbObject.get("eventTime");
+				GregorianCalendar eventCalendar = new GregorianCalendar();
+				eventCalendar.setTimeInMillis(eventTime);
+				// Filtering
+				if (samplingUnit.equals("sec")) {
+
+				} else if (samplingUnit.equals("min")) {
+					eventCalendar.set(Calendar.SECOND, 0);
+				} else if (samplingUnit.equals("hour")) {
+					eventCalendar.set(Calendar.MINUTE, 0);
+					eventCalendar.set(Calendar.SECOND, 0);
+				} else if (samplingUnit.equals("day")) {
+					eventCalendar.set(Calendar.HOUR, 1);
+					eventCalendar.set(Calendar.MINUTE, 0);
+					eventCalendar.set(Calendar.SECOND, 0);
+				}
+				DBObject ext1 = (DBObject) dbObject.get("extension");
+				DBObject ext2 = (DBObject) ext1.get("extension");
+				DBObject any = (DBObject) ext2.get("any");
+				JSONObject extObj = new JSONObject(any.toMap());
+				String time = sdf.format(eventCalendar.getTime());
+				retMap.put(time, extObj);
+			}
+		}
+
+		Iterator<String> iter = retMap.keySet().iterator();
+		List<JSONObject> jsonList = new ArrayList<JSONObject>();
+		while (iter.hasNext()) {
+			JSONObject json = new JSONObject();
+			String time = iter.next();
+			json.put(time, retMap.get(time));
+			jsonList.add(json);
+		}
+		Collections.sort(jsonList, new Comparator<JSONObject>() {
+
+			@Override
+			public int compare(JSONObject o1, JSONObject o2) {
+				return JSONObject.getNames(o1)[0].compareTo(JSONObject
+						.getNames(o2)[0]);
+			}
+
+		});
+
+		JSONArray retArr = new JSONArray();
+
+		for (int i = 0; i < jsonList.size(); i++) {
+			retArr.put(jsonList.get(i));
+		}
+
+		((AbstractApplicationContext) ctx).close();
+		return retArr.toString(1);
+	}
+
+	// Misc APIs for DrM
+	@RequestMapping(value = "/location", method = RequestMethod.GET)
+	@ResponseBody
+	public String getLocation(@RequestParam String epcList) {
+
+		// No validation on query, do your best effort
+
+		ApplicationContext ctx = new GenericXmlApplicationContext(
+				"classpath:MongoConfig.xml");
+		MongoOperations mongoOperation = (MongoOperations) ctx
+				.getBean("mongoTemplate");
+		DBCollection collection = mongoOperation.getCollection("ObjectEvent");
+
+		// Field Projection
+		DBObject fields = new BasicDBObject();
+		fields.put("eventTime", 1);
+		fields.put("epcList", 1);
+		fields.put("extension", 1);
+		fields.put("_id", 0);
+
+		JSONArray retArr = new JSONArray();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+		// For each comma separated EPCs
+		String[] epcArr = epcList.split(",");
+		for (int i = 0; i < epcArr.length; i++) {
+			JSONObject retObj = new JSONObject();
+			String epc = epcArr[i].trim();
+			retObj.put("epc", epc);
+			DBObject query = getINQueryObject(new String[] { "epcList.epc" },
+					epc);
+			DBObject order = new BasicDBObject("eventTime", 1);
+			DBObject dbObject = collection.findOne(query, fields, order);
+			if (dbObject != null) {
+				long eventTime = (long) dbObject.get("eventTime");
+				GregorianCalendar eventCalendar = new GregorianCalendar();
+				eventCalendar.setTimeInMillis(eventTime);
+				String time = sdf.format(eventCalendar.getTime());
+				retObj.put("eventTime", time);
+				DBObject ext1 = (DBObject) dbObject.get("extension");
+				DBObject ext2 = (DBObject) ext1.get("extension");
+				DBObject any = (DBObject) ext2.get("any");
+				if (any.containsField("smartphone_sensors_gps_lon") == true
+						&& any.containsField("smartphone_sensors_gps_lat") == true) {
+					retObj.put("lon", any.get("smartphone_sensors_gps_lon")
+							.toString());
+					retObj.put("lat", any.get("smartphone_sensors_gps_lat")
+							.toString());
+					retArr.put(retObj);
+				}
+			}
+		}
+
+		((AbstractApplicationContext) ctx).close();
+		return retArr.toString(1);
 	}
 }

@@ -112,7 +112,7 @@ public class MongoQueryUtil {
 		return null;		
 	}
 
-	static DBObject getINQueryObject(String[] fields, String csv) {
+	public static DBObject getINQueryObject(String[] fields, String csv) {
 		String[] eqArr = csv.split(",");
 		BasicDBList subStringList = new BasicDBList();
 		for (int i = 0; i < eqArr.length; i++) {
