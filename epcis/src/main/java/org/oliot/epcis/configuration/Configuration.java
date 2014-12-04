@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -15,6 +16,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
 import org.oliot.epcis.service.capture.CaptureMQListener;
+import org.oliot.epcis.service.query.Summarization;
 import org.oliot.epcis.service.query.mongodb.MongoSubscription;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Queue;
@@ -78,7 +80,12 @@ public class Configuration implements ServletContextListener {
 
 		// load existing subscription
 		loadExistingSubscription();
+		
+		// For drm
+		doSummarization();
 	}
+
+	
 
 	private void setLogger() {
 		// Log4j Setting
@@ -215,5 +222,11 @@ public class Configuration implements ServletContextListener {
 		} else if (Configuration.backend.equals("MySQL")) {
 
 		}
+	}
+	
+	private void doSummarization() {
+		Timer timer = new Timer();
+		// Summarization will start after 10 second, continuously running in each 2 hours
+		timer.scheduleAtFixedRate(new Summarization(), 10000, 7200000);
 	}
 }

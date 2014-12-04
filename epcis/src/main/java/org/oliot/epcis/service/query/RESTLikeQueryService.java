@@ -337,10 +337,250 @@ public class RESTLikeQueryService implements ServletContextAware {
 	// Misc APIs for DrM
 	@RequestMapping(value = "/events", method = RequestMethod.GET)
 	@ResponseBody
+	public String getSampleEvents(@RequestParam String epc,
+			@RequestParam(required = false) String fromTime,
+			@RequestParam(required = false) String toTime,
+			@RequestParam(required = false) String rate,
+			@RequestParam(required = false) String isCompressed) {
+
+		// No validation on query, do your best effort
+
+		// Make Query Objects
+		List<DBObject> queryList = new ArrayList<DBObject>();
+		try {
+			if (fromTime != null) {
+				SimpleDateFormat sdf = new SimpleDateFormat(
+						"yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+				GregorianCalendar geEventTimeCalendar = new GregorianCalendar();
+				geEventTimeCalendar.setTime(sdf.parse(fromTime));
+				long geEventTimeMillis = geEventTimeCalendar.getTimeInMillis();
+				DBObject query = new BasicDBObject();
+				query.put("eventTime", new BasicDBObject("$gte",
+						geEventTimeMillis));
+				queryList.add(query);
+			}
+			if (toTime != null) {
+				SimpleDateFormat sdf = new SimpleDateFormat(
+						"yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+				GregorianCalendar ltEventTimeCalendar = new GregorianCalendar();
+				Date date = sdf.parse(toTime);
+				ltEventTimeCalendar.setTime(date);
+				long ltEventTimeMillis = ltEventTimeCalendar.getTimeInMillis();
+				DBObject query = new BasicDBObject();
+				query.put("eventTime", new BasicDBObject("$lt",
+						ltEventTimeMillis));
+				queryList.add(query);
+			}
+
+			if (epc != null) {
+				DBObject query = getINQueryObject(
+						new String[] { "epcList.epc" }, epc);
+				if (query != null)
+					queryList.add(query);
+			}
+		} catch (ParseException e) {
+			return e.toString();
+		}
+
+		// Field Projection
+		DBObject fields = new BasicDBObject();
+		fields.put("eventTime", 1);
+		fields.put("epcList", 1);
+		fields.put("extension", 1);
+		fields.put("_id", 0);
+
+		// Query
+		ApplicationContext ctx = new GenericXmlApplicationContext(
+				"classpath:MongoConfig.xml");
+		MongoOperations mongoOperation = (MongoOperations) ctx
+				.getBean("mongoTemplate");
+		DBCollection collection = mongoOperation.getCollection("ObjectEvent");
+
+		// Merge All the queries with $and
+		DBObject baseQuery = new BasicDBObject();
+		DBCursor cursor;
+		if (queryList.isEmpty() == false) {
+			BasicDBList aggreQueryList = new BasicDBList();
+			for (int i = 0; i < queryList.size(); i++) {
+				aggreQueryList.add(queryList.get(i));
+			}
+			baseQuery.put("$and", aggreQueryList);
+			// Query
+			cursor = collection.find(baseQuery, fields);
+		} else {
+			cursor = collection.find();
+		}
+
+		DBObject orderBy = new BasicDBObject();
+		orderBy.put("eventTime", 1);
+
+		cursor.sort(orderBy);
+
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+
+		// Rate should be integer
+		int rateInt = 1;
+		try {
+			rateInt = Integer.parseInt(rate);
+		} catch (NumberFormatException e) {
+			((AbstractApplicationContext) ctx).close();
+			return e.toString();
+		}
+
+		JSONArray retArr = new JSONArray();
+
+		int count = 1;
+
+		while (cursor.hasNext()) {
+			DBObject dbObject = cursor.next();
+			if (count % rateInt == 0) {
+				if (dbObject.containsField("extension") == true) {
+					long eventTime = (long) dbObject.get("eventTime");
+					GregorianCalendar eventCalendar = new GregorianCalendar();
+					eventCalendar.setTimeInMillis(eventTime);
+					DBObject ext1 = (DBObject) dbObject.get("extension");
+					DBObject ext2 = (DBObject) ext1.get("extension");
+					DBObject any = (DBObject) ext2.get("any");
+					JSONObject extObj = new JSONObject(any.toMap());
+					if (isCompressed != null && isCompressed.equals("true")) {
+						// Compression of ECG, EMG
+						if (extObj.isNull("ehealth_sensors_ECG") == false) {
+							String ecg = (String) extObj
+									.get("ehealth_sensors_ECG");
+							String[] sp = ecg.split(",");
+							if (sp.length > 1) {
+								extObj.put("ehealth_sensors_ECG", sp[1]);
+							}
+						}
+						if (extObj.isNull("ehealth_sensors_EMG") == false) {
+							String emg = (String) extObj
+									.get("ehealth_sensors_EMG");
+							String[] sp = emg.split(",");
+							if (sp.length > 1) {
+								extObj.put("ehealth_sensors_EMG", sp[1]);
+							}
+						}
+					}
+					String time = sdf.format(eventCalendar.getTime());
+					JSONObject json = new JSONObject();
+					json.put(time, extObj);
+					retArr.put(json);
+				}
+			}
+			count++;
+		}
+
+		((AbstractApplicationContext) ctx).close();
+		return retArr.toString(1);
+	}
+
+	@RequestMapping(value = "/summary", method = RequestMethod.GET)
+	@ResponseBody
+	public String getSummary(@RequestParam String epc) {
+
+		ApplicationContext ctx = new GenericXmlApplicationContext(
+				"classpath:MongoConfig.xml");
+		MongoOperations mongoOperation = (MongoOperations) ctx
+				.getBean("mongoTemplate");
+		DBCollection collection = mongoOperation.getCollection("Summary");
+		SimpleDateFormat sdf = new SimpleDateFormat(
+				"yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+		DBCursor cursor = collection.find();
+		JSONArray retArr = new JSONArray();
+
+		List<JSONObject> jsonList = new ArrayList<JSONObject>();
+		while (cursor.hasNext()) {
+			DBObject obj = cursor.next();
+			String id = (String) obj.get("_id");
+			if (id.contains(epc)) {
+				String[] ids = id.split("\\|");
+				if (ids.length < 2)
+					continue;
+				String timeString = ids[1];
+				Long timeLong = Long.parseLong(timeString);
+				Date date = new Date(timeLong);
+				String time = sdf.format(date);
+				JSONObject jObj = new JSONObject();
+				jObj.put(time, obj.get("value"));
+				jsonList.add(jObj);
+			}
+		}
+
+		Collections.sort(jsonList, new Comparator<JSONObject>() {
+
+			@Override
+			public int compare(JSONObject o1, JSONObject o2) {
+				return JSONObject.getNames(o1)[0].compareTo(JSONObject
+						.getNames(o2)[0]);
+			}
+
+		});
+
+		for (int i = 0; i < jsonList.size(); i++) {
+			retArr.put(jsonList.get(i));
+		}
+
+		((AbstractApplicationContext) ctx).close();
+		return retArr.toString(1);
+	}
+
+	@RequestMapping(value = "/event", method = RequestMethod.GET)
+	@ResponseBody
+	public String getRecentEvent(@RequestParam String epcList) {
+
+		// No validation on query, do your best effort
+
+		ApplicationContext ctx = new GenericXmlApplicationContext(
+				"classpath:MongoConfig.xml");
+		MongoOperations mongoOperation = (MongoOperations) ctx
+				.getBean("mongoTemplate");
+		DBCollection collection = mongoOperation.getCollection("ObjectEvent");
+
+		// Field Projection
+		DBObject fields = new BasicDBObject();
+		fields.put("eventTime", 1);
+		fields.put("epcList", 1);
+		fields.put("extension", 1);
+		fields.put("_id", 0);
+
+		JSONArray retArr = new JSONArray();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+		// For each comma separated EPCs
+		String[] epcArr = epcList.split(",");
+		for (int i = 0; i < epcArr.length; i++) {
+			JSONObject retObj = new JSONObject();
+			String epc = epcArr[i].trim();
+			retObj.put("epc", epc);
+			DBObject query = getINQueryObject(new String[] { "epcList.epc" },
+					epc);
+			DBObject order = new BasicDBObject("eventTime", 1);
+			DBObject dbObject = collection.findOne(query, fields, order);
+			if (dbObject != null) {
+				long eventTime = (long) dbObject.get("eventTime");
+				GregorianCalendar eventCalendar = new GregorianCalendar();
+				eventCalendar.setTimeInMillis(eventTime);
+				String time = sdf.format(eventCalendar.getTime());
+				DBObject ext1 = (DBObject) dbObject.get("extension");
+				if (ext1 != null) {
+					DBObject ext2 = (DBObject) ext1.get("extension");
+					DBObject any = (DBObject) ext2.get("any");
+					retObj.put(time, any);
+					retArr.put(retObj);
+				}
+			}
+		}
+
+		((AbstractApplicationContext) ctx).close();
+		return retArr.toString(1);
+	}
+
+	@Deprecated
+	@RequestMapping(value = "/events/unit", method = RequestMethod.GET)
+	@ResponseBody
 	public String getEvents(@RequestParam String epc,
 			@RequestParam(required = false) String fromTime,
 			@RequestParam(required = false) String toTime,
-			@RequestParam(required = false) String samplingUnit) {
+			@RequestParam String samplingUnit) {
 
 		// No validation on query, do your best effort
 
@@ -429,7 +669,7 @@ public class RESTLikeQueryService implements ServletContextAware {
 					eventCalendar.set(Calendar.MINUTE, 0);
 					eventCalendar.set(Calendar.SECOND, 0);
 				} else if (samplingUnit.equals("day")) {
-					eventCalendar.set(Calendar.HOUR, 1);
+					eventCalendar.set(Calendar.HOUR_OF_DAY, 1);
 					eventCalendar.set(Calendar.MINUTE, 0);
 					eventCalendar.set(Calendar.SECOND, 0);
 				}
@@ -509,15 +749,17 @@ public class RESTLikeQueryService implements ServletContextAware {
 				String time = sdf.format(eventCalendar.getTime());
 				retObj.put("eventTime", time);
 				DBObject ext1 = (DBObject) dbObject.get("extension");
-				DBObject ext2 = (DBObject) ext1.get("extension");
-				DBObject any = (DBObject) ext2.get("any");
-				if (any.containsField("smartphone_sensors_gps_lon") == true
-						&& any.containsField("smartphone_sensors_gps_lat") == true) {
-					retObj.put("lon", any.get("smartphone_sensors_gps_lon")
-							.toString());
-					retObj.put("lat", any.get("smartphone_sensors_gps_lat")
-							.toString());
-					retArr.put(retObj);
+				if (ext1 != null) {
+					DBObject ext2 = (DBObject) ext1.get("extension");
+					DBObject any = (DBObject) ext2.get("any");
+					if (any.containsField("smartphone_sensors_gps_lon") == true
+							&& any.containsField("smartphone_sensors_gps_lat") == true) {
+						retObj.put("lon", any.get("smartphone_sensors_gps_lon")
+								.toString());
+						retObj.put("lat", any.get("smartphone_sensors_gps_lat")
+								.toString());
+						retArr.put(retObj);
+					}
 				}
 			}
 		}
