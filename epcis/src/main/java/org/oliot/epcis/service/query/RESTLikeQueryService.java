@@ -553,7 +553,7 @@ public class RESTLikeQueryService implements ServletContextAware {
 			retObj.put("epc", epc);
 			DBObject query = getINQueryObject(new String[] { "epcList.epc" },
 					epc);
-			DBObject order = new BasicDBObject("eventTime", 1);
+			DBObject order = new BasicDBObject("eventTime", -1);
 			DBObject dbObject = collection.findOne(query, fields, order);
 			if (dbObject != null) {
 				long eventTime = (long) dbObject.get("eventTime");
@@ -740,7 +740,7 @@ public class RESTLikeQueryService implements ServletContextAware {
 			retObj.put("epc", epc);
 			DBObject query = getINQueryObject(new String[] { "epcList.epc" },
 					epc);
-			DBObject order = new BasicDBObject("eventTime", 1);
+			DBObject order = new BasicDBObject("eventTime", -1);
 			DBObject dbObject = collection.findOne(query, fields, order);
 			if (dbObject != null) {
 				long eventTime = (long) dbObject.get("eventTime");
