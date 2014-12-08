@@ -535,7 +535,7 @@ public class RESTLikeQueryService implements ServletContextAware {
 		MongoOperations mongoOperation = (MongoOperations) ctx
 				.getBean("mongoTemplate");
 		DBCollection collection = mongoOperation.getCollection("ObjectEvent");
-
+		//TODO:
 		// Field Projection
 		DBObject fields = new BasicDBObject();
 		fields.put("eventTime", 1);
@@ -554,22 +554,31 @@ public class RESTLikeQueryService implements ServletContextAware {
 			DBObject query = getINQueryObject(new String[] { "epcList.epc" },
 					epc);
 			DBObject order = new BasicDBObject("eventTime", -1);
-			DBObject dbObject = collection.findOne(query, fields, order);
-			if (dbObject != null) {
-				long eventTime = (long) dbObject.get("eventTime");
-				GregorianCalendar eventCalendar = new GregorianCalendar();
-				eventCalendar.setTimeInMillis(eventTime);
-				String time = sdf.format(eventCalendar.getTime());
-				DBObject ext1 = (DBObject) dbObject.get("extension");
-				if (ext1 != null) {
-					DBObject ext2 = (DBObject) ext1.get("extension");
-					DBObject any = (DBObject) ext2.get("any");
-					retObj.put(time, any);
-					retArr.put(retObj);
+			DBCursor dbCursor = collection.find(query, fields);
+			dbCursor.sort(order);
+			dbCursor.limit(10);
+			JSONArray dataArr = new JSONArray();
+			while( dbCursor.hasNext() )
+			{
+				DBObject dbObject = dbCursor.next();
+				if (dbObject != null) {
+					long eventTime = (long) dbObject.get("eventTime");
+					GregorianCalendar eventCalendar = new GregorianCalendar();
+					eventCalendar.setTimeInMillis(eventTime);
+					String time = sdf.format(eventCalendar.getTime());
+					DBObject ext1 = (DBObject) dbObject.get("extension");
+					if (ext1 != null) {
+						DBObject ext2 = (DBObject) ext1.get("extension");
+						DBObject any = (DBObject) ext2.get("any");
+						JSONObject extObj = new JSONObject();
+						extObj.put(time, any);
+						dataArr.put(extObj);
+					}
 				}
-			}
+			}	
+			retObj.put("data", dataArr);
+			retArr.put(retObj);
 		}
-
 		((AbstractApplicationContext) ctx).close();
 		return retArr.toString(1);
 	}
