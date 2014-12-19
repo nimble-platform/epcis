@@ -412,7 +412,7 @@ public class RESTLikeQueryService implements ServletContextAware {
 		}
 
 		DBObject orderBy = new BasicDBObject();
-		orderBy.put("eventTime", 1);
+		orderBy.put("eventTime", -1);
 
 		cursor.sort(orderBy);
 
