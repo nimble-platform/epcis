@@ -341,7 +341,8 @@ public class RESTLikeQueryService implements ServletContextAware {
 			@RequestParam(required = false) String fromTime,
 			@RequestParam(required = false) String toTime,
 			@RequestParam(required = false) String rate,
-			@RequestParam(required = false) String isCompressed) {
+			@RequestParam(required = false) String isCompressed,
+			@RequestParam(required = false) int order) {
 
 		// No validation on query, do your best effort
 
@@ -367,7 +368,7 @@ public class RESTLikeQueryService implements ServletContextAware {
 				ltEventTimeCalendar.setTime(date);
 				long ltEventTimeMillis = ltEventTimeCalendar.getTimeInMillis();
 				DBObject query = new BasicDBObject();
-				query.put("eventTime", new BasicDBObject("$lt",
+				query.put("eventTime", new BasicDBObject("$lte",
 						ltEventTimeMillis));
 				queryList.add(query);
 			}
@@ -396,7 +397,7 @@ public class RESTLikeQueryService implements ServletContextAware {
 				.getBean("mongoTemplate");
 		DBCollection collection = mongoOperation.getCollection("ObjectEvent");
 
-		// Merge All the queries with $and
+		// Merge All the queries with and
 		DBObject baseQuery = new BasicDBObject();
 		DBCursor cursor;
 		if (queryList.isEmpty() == false) {
@@ -410,9 +411,9 @@ public class RESTLikeQueryService implements ServletContextAware {
 		} else {
 			cursor = collection.find();
 		}
-
+		
 		DBObject orderBy = new BasicDBObject();
-		orderBy.put("eventTime", -1);
+		orderBy.put("eventTime", order);
 
 		cursor.sort(orderBy);
 
@@ -543,6 +544,8 @@ public class RESTLikeQueryService implements ServletContextAware {
 		fields.put("extension", 1);
 		fields.put("_id", 0);
 
+		long curTime = System.currentTimeMillis();
+		
 		JSONArray retArr = new JSONArray();
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 		// For each comma separated EPCs
@@ -563,6 +566,10 @@ public class RESTLikeQueryService implements ServletContextAware {
 				DBObject dbObject = dbCursor.next();
 				if (dbObject != null) {
 					long eventTime = (long) dbObject.get("eventTime");
+					if( eventTime < ( curTime - 10000 ) )
+					{
+						continue;
+					}
 					GregorianCalendar eventCalendar = new GregorianCalendar();
 					eventCalendar.setTimeInMillis(eventTime);
 					String time = sdf.format(eventCalendar.getTime());

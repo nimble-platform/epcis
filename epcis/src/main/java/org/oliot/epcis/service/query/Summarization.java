@@ -22,7 +22,7 @@ public class Summarization extends TimerTask {
 				.getBean("mongoTemplate");
 		DBCollection collection = mongoOperation.getCollection("ObjectEvent");
 
-		String mapFunc = "function(){ if( this.extension != null ) { emit( this.epcList[0].epc + \"|\"+Math.round(this.eventTime/43200000)*43200000, this.extension.extension.any ); }}";
+		String mapFunc = "function(){ if( this.extension != null ) { emit( this.epcList[0].epc + \"|\"+Math.round(this.eventTime/86400000)*86400000, this.extension.extension.any ); }}";
 		String reduceFunc = "function(key, values) { return values[0];}";
 		
 		MapReduceOutput out = collection.mapReduce(mapFunc, reduceFunc, "Summary", MapReduceCommand.OutputType.REPLACE, null);
