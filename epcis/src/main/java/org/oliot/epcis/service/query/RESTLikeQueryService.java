@@ -411,7 +411,7 @@ public class RESTLikeQueryService implements ServletContextAware {
 		} else {
 			cursor = collection.find();
 		}
-		
+
 		DBObject orderBy = new BasicDBObject();
 		orderBy.put("eventTime", order);
 
@@ -477,15 +477,32 @@ public class RESTLikeQueryService implements ServletContextAware {
 
 	@RequestMapping(value = "/summary", method = RequestMethod.GET)
 	@ResponseBody
-	public String getSummary(@RequestParam String epc) {
+	public String getSummary(@RequestParam String epc,
+			@RequestParam(required = false) String fromTime,
+			@RequestParam(required = false) String toTime) {
+
+		SimpleDateFormat sdf = new SimpleDateFormat(
+				"yyyy-MM-dd'T'HH:mm:ss.SSSXXX");		
+
+		long fromTimeLong = 0L;
+		long toTimeLong = 0L;
+
+		try {
+			if (fromTime != null)
+				fromTimeLong = sdf.parse(fromTime).getTime();
+			if (toTime != null)
+				toTimeLong = sdf.parse(toTime).getTime();
+		} catch (ParseException e) {
+			return e.toString();
+		}
 
 		ApplicationContext ctx = new GenericXmlApplicationContext(
 				"classpath:MongoConfig.xml");
 		MongoOperations mongoOperation = (MongoOperations) ctx
 				.getBean("mongoTemplate");
 		DBCollection collection = mongoOperation.getCollection("Summary");
-		SimpleDateFormat sdf = new SimpleDateFormat(
-				"yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+
+		
 		DBCursor cursor = collection.find();
 		JSONArray retArr = new JSONArray();
 
@@ -498,7 +515,21 @@ public class RESTLikeQueryService implements ServletContextAware {
 				if (ids.length < 2)
 					continue;
 				String timeString = ids[1];
-				Long timeLong = Long.parseLong(timeString);
+				long timeLong = Long.parseLong(timeString);
+				if( fromTimeLong != 0)
+				{
+					if( fromTimeLong > timeLong )
+					{
+						continue;
+					}
+				}
+				if( toTimeLong != 0)
+				{
+					if( toTimeLong < timeLong )
+					{
+						continue;
+					}
+				}
 				Date date = new Date(timeLong);
 				String time = sdf.format(date);
 				JSONObject jObj = new JSONObject();
@@ -536,7 +567,7 @@ public class RESTLikeQueryService implements ServletContextAware {
 		MongoOperations mongoOperation = (MongoOperations) ctx
 				.getBean("mongoTemplate");
 		DBCollection collection = mongoOperation.getCollection("ObjectEvent");
-		//TODO:
+		// TODO:
 		// Field Projection
 		DBObject fields = new BasicDBObject();
 		fields.put("eventTime", 1);
@@ -545,7 +576,7 @@ public class RESTLikeQueryService implements ServletContextAware {
 		fields.put("_id", 0);
 
 		long curTime = System.currentTimeMillis();
-		
+
 		JSONArray retArr = new JSONArray();
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 		// For each comma separated EPCs
@@ -561,13 +592,11 @@ public class RESTLikeQueryService implements ServletContextAware {
 			dbCursor.sort(order);
 			dbCursor.limit(10);
 			JSONArray dataArr = new JSONArray();
-			while( dbCursor.hasNext() )
-			{
+			while (dbCursor.hasNext()) {
 				DBObject dbObject = dbCursor.next();
 				if (dbObject != null) {
 					long eventTime = (long) dbObject.get("eventTime");
-					if( eventTime < ( curTime - 10000 ) )
-					{
+					if (eventTime < (curTime - 10000)) {
 						continue;
 					}
 					GregorianCalendar eventCalendar = new GregorianCalendar();
@@ -582,7 +611,7 @@ public class RESTLikeQueryService implements ServletContextAware {
 						dataArr.put(extObj);
 					}
 				}
-			}	
+			}
 			retObj.put("data", dataArr);
 			retArr.put(retObj);
 		}
