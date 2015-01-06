@@ -482,7 +482,7 @@ public class RESTLikeQueryService implements ServletContextAware {
 			@RequestParam(required = false) String toTime) {
 
 		SimpleDateFormat sdf = new SimpleDateFormat(
-				"yyyy-MM-dd'T'HH:mm:ss.SSSXXX");		
+				"yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
 
 		long fromTimeLong = 0L;
 		long toTimeLong = 0L;
@@ -502,7 +502,6 @@ public class RESTLikeQueryService implements ServletContextAware {
 				.getBean("mongoTemplate");
 		DBCollection collection = mongoOperation.getCollection("Summary");
 
-		
 		DBCursor cursor = collection.find();
 		JSONArray retArr = new JSONArray();
 
@@ -516,17 +515,13 @@ public class RESTLikeQueryService implements ServletContextAware {
 					continue;
 				String timeString = ids[1];
 				long timeLong = Long.parseLong(timeString);
-				if( fromTimeLong != 0)
-				{
-					if( fromTimeLong > timeLong )
-					{
+				if (fromTimeLong != 0) {
+					if (fromTimeLong > timeLong) {
 						continue;
 					}
 				}
-				if( toTimeLong != 0)
-				{
-					if( toTimeLong < timeLong )
-					{
+				if (toTimeLong != 0) {
+					if (toTimeLong < timeLong) {
 						continue;
 					}
 				}
@@ -619,15 +614,13 @@ public class RESTLikeQueryService implements ServletContextAware {
 		return retArr.toString(1);
 	}
 
-	@Deprecated
-	@RequestMapping(value = "/events/unit", method = RequestMethod.GET)
+	@RequestMapping(value = "/events2", method = RequestMethod.GET)
 	@ResponseBody
 	public String getEvents(@RequestParam String epc,
 			@RequestParam(required = false) String fromTime,
 			@RequestParam(required = false) String toTime,
-			@RequestParam String samplingUnit) {
-
-		// No validation on query, do your best effort
+			@RequestParam String samplingUnit,
+			@RequestParam(required = false) final int order) {
 
 		// Make Query Objects
 		List<DBObject> queryList = new ArrayList<DBObject>();
@@ -651,7 +644,7 @@ public class RESTLikeQueryService implements ServletContextAware {
 				ltEventTimeCalendar.setTime(date);
 				long ltEventTimeMillis = ltEventTimeCalendar.getTimeInMillis();
 				DBObject query = new BasicDBObject();
-				query.put("eventTime", new BasicDBObject("$lt",
+				query.put("eventTime", new BasicDBObject("$lte",
 						ltEventTimeMillis));
 				queryList.add(query);
 			}
@@ -680,7 +673,7 @@ public class RESTLikeQueryService implements ServletContextAware {
 				.getBean("mongoTemplate");
 		DBCollection collection = mongoOperation.getCollection("ObjectEvent");
 
-		// Merge All the queries with $and
+		// Merge All the queries with and
 		DBObject baseQuery = new BasicDBObject();
 		DBCursor cursor;
 		if (queryList.isEmpty() == false) {
@@ -695,9 +688,14 @@ public class RESTLikeQueryService implements ServletContextAware {
 			cursor = collection.find();
 		}
 
-		Map<String, JSONObject> retMap = new HashMap<String, JSONObject>();
+		DBObject orderBy = new BasicDBObject();
+		orderBy.put("eventTime", order);
+
+		cursor.sort(orderBy);
 
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+
+		Map<String, JSONObject> retMap = new HashMap<String, JSONObject>();
 
 		while (cursor.hasNext()) {
 			DBObject dbObject = cursor.next();
@@ -739,8 +737,14 @@ public class RESTLikeQueryService implements ServletContextAware {
 
 			@Override
 			public int compare(JSONObject o1, JSONObject o2) {
-				return JSONObject.getNames(o1)[0].compareTo(JSONObject
-						.getNames(o2)[0]);
+				// Ascending
+				if (order == 1) {
+					return JSONObject.getNames(o1)[0].compareTo(JSONObject
+							.getNames(o2)[0]);
+				} else {
+					return JSONObject.getNames(o2)[0].compareTo(JSONObject
+							.getNames(o1)[0]);
+				}
 			}
 
 		});
