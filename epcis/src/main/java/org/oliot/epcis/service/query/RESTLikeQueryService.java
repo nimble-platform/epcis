@@ -601,9 +601,11 @@ public class RESTLikeQueryService implements ServletContextAware {
 					if (ext1 != null) {
 						DBObject ext2 = (DBObject) ext1.get("extension");
 						DBObject any = (DBObject) ext2.get("any");
-						JSONObject extObj = new JSONObject();
-						extObj.put(time, any);
-						dataArr.put(extObj);
+						if (any.keySet().size() != 0) {
+							JSONObject extObj = new JSONObject();
+							extObj.put(time, any);
+							dataArr.put(extObj);
+						}
 					}
 				}
 			}
@@ -719,9 +721,11 @@ public class RESTLikeQueryService implements ServletContextAware {
 				DBObject ext1 = (DBObject) dbObject.get("extension");
 				DBObject ext2 = (DBObject) ext1.get("extension");
 				DBObject any = (DBObject) ext2.get("any");
-				JSONObject extObj = new JSONObject(any.toMap());
-				String time = sdf.format(eventCalendar.getTime());
-				retMap.put(time, extObj);
+				if (any.keySet().size() != 0) {
+					JSONObject extObj = new JSONObject(any.toMap());
+					String time = sdf.format(eventCalendar.getTime());
+					retMap.put(time, extObj);
+				}
 			}
 		}
 
