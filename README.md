@@ -31,4 +31,4 @@ bjw0829@kaist.ac.kr, bjw0829@gmail.com
 
 Branch Information
 ========
-EPCIS v1.1- Message Enabled Version
+EPCIS v1.1- Message Queue Enabled Version 
