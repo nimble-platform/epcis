@@ -1,0 +1,39 @@
+build:
+  artifactId: '@project.artifactId@'
+  timestamp: '@timestamp@'
+  version: '@project.version@'
+server:
+  max-http-header-size: 1048576
+  servlet-path: /Service/*
+#  tomcat:
+#    max-connections: 3000
+#    max-http-post-size: 1048576
+#    max-threads: 1000
+spring:
+  jackson:
+    date-format: com.fasterxml.jackson.databind.util.ISO8601DateFormat
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+  data:
+    mongodb:
+      #authentication-database: admin
+      database:  ${EPCIS_DB_NAME:epcis} 
+      #host: ${EPCIS_DB_HOST:127.0.0.1}  #docker.xxx.xxx.uni-bremen.de
+      #password: <password>
+      #
+      #port: 27017 #8118
+      #username: <username>
+      #ssl-enabled: true
+      uri: ${EPCIS_DB_HOST_URL:mongodb://localhost:27017/} 
+  identity-service:
+    url: http://${IDENTITY_SRV_HOST:nimble-staging.salzburgresearch.at}:${IDENTITY_SRV_PORT:80}/identity      
+springfox:
+  documentation:
+    swagger:
+      v2:
+        path: /api-docs
+epcis:
+  capture:
+    verification: true   
+
+ 

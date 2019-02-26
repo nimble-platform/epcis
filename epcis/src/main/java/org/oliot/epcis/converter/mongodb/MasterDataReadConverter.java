@@ -18,6 +18,8 @@ import org.oliot.model.epcis.IDListType;
 import org.oliot.model.epcis.VocabularyElementListType;
 import org.oliot.model.epcis.VocabularyElementType;
 import org.oliot.model.epcis.VocabularyType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
 /**
@@ -36,7 +38,14 @@ import org.w3c.dom.Document;
  *         bjw0829@kaist.ac.kr, bjw0829@gmail.com
  */
 
+/**
+* Modifications copyright (C) 2019 Quan Deng
+* 
+*/
+
 public class MasterDataReadConverter {
+    private static Logger log = LoggerFactory.getLogger(MasterDataReadConverter.class);
+
 
 	public VocabularyType convert(BsonDocument dbObject) {
 		try {
@@ -106,7 +115,7 @@ public class MasterDataReadConverter {
 			vt.setVocabularyElementList(velt);
 			return vt;
 		} catch (ParserConfigurationException e) {
-			Configuration.logger.error(e.toString());
+			log.error(e.toString());
 		}
 		return null;
 	}

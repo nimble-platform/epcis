@@ -17,6 +17,10 @@ import org.oliot.model.epcis.EPCISMasterDataDocumentType;
 
 import org.oliot.model.epcis.VocabularyElementType;
 import org.oliot.model.epcis.VocabularyType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import eu.nimble.service.epcis.services.AuthorizationSrv;
 
 /**
  * Copyright (C) 2014-2017 Jaewook Byun
@@ -34,16 +38,24 @@ import org.oliot.model.epcis.VocabularyType;
  *         bjw0829@kaist.ac.kr, bjw0829@gmail.com
  */
 
-public class CaptureService implements CoreCaptureService {
+/**
+* Modifications copyright (C) 2019 Quan Deng
+*/
 
+@Component
+public class CaptureService {
+
+	@Autowired
+	AuthorizationSrv authorizationSrv;
+	
 	// Return null -> Succeed, not null --> error message
-	public JSONObject capture(EPCISDocumentType epcisDocument, String userID, String accessModifier,
+	public JSONObject capture(EPCISDocumentType epcisDocument, String userID, 
 			Integer gcpLength) {
 		HashMap<String, Object> retMsg = new HashMap<String, Object>();
 		// Capture EPCIS Events
-		retMsg.putAll(captureEvents(epcisDocument, userID, accessModifier, gcpLength));
+		retMsg.putAll(captureEvents(epcisDocument, userID,  gcpLength));
 		// Capture EPCIS Vocabularies
-		retMsg.putAll(captureVocabularies(epcisDocument, userID, accessModifier, gcpLength));
+		retMsg.putAll(captureVocabularies(epcisDocument, userID, gcpLength));
 		return new JSONObject(retMsg);
 	}
 
@@ -61,34 +73,46 @@ public class CaptureService implements CoreCaptureService {
 	}
 
 	@SuppressWarnings("rawtypes")
-	private BsonDocument prepareEvent(Object jaxbEvent, String userID, String accessModifier, Integer gcpLength) {
+	private BsonDocument prepareEvent(Object jaxbEvent, String userID, Integer gcpLength) {
 		JAXBElement eventElement = (JAXBElement) jaxbEvent;
 		Object event = eventElement.getValue();
 		CaptureUtil.isCorrectEvent(event);
 		MongoCaptureUtil m = new MongoCaptureUtil();
-		BsonDocument doc = m.convert(event, userID, accessModifier, gcpLength);
+		BsonDocument doc = m.convert(event, userID, gcpLength);
 		return doc;
 	}
 
-	private HashMap<String, Object> captureEvents(EPCISDocumentType epcisDocument, String userID, String accessModifier,
+	private HashMap<String, Object> captureEvents(EPCISDocumentType epcisDocument, String userID,
 			Integer gcpLength) {
+		
+		HashMap<String, Object> retMessage = new HashMap<String, Object>();
+		
 		try {
 			List<Object> eventList = epcisDocument.getEPCISBody().getEventList()
 					.getObjectEventOrAggregationEventOrQuantityEvent();
 			List<BsonDocument> bsonDocumentList = eventList.parallelStream().parallel()
-					.map(jaxbEvent -> prepareEvent(jaxbEvent, userID, accessModifier, gcpLength))
+					.map(jaxbEvent -> prepareEvent(jaxbEvent, userID, gcpLength))
 					.filter(doc -> doc != null).collect(Collectors.toList());
 			MongoCaptureUtil util = new MongoCaptureUtil();
+			
 			if (bsonDocumentList != null && bsonDocumentList.size() != 0)
+			{
+				if(authorizationSrv.hasCapturePermission(userID, bsonDocumentList))
+				{
+					retMessage.put("error", "userPartyID has no permission for capturing the given events!" );
+					return retMessage;
+				}
 				return util.capture(bsonDocumentList);
+				
+			}
 		} catch (NullPointerException ex) {
 			// No Event
 		}
-		return new HashMap<String, Object>();
+		return retMessage;
 	}
 
 	private HashMap<String, Object> captureVocabularies(EPCISDocumentType epcisDocument, String userID,
-			String accessModifier, Integer gcpLength) {
+			 Integer gcpLength) {
 		HashMap<String, Object> retMsg = new HashMap<String, Object>();
 		try {
 			// Master Data in the document
@@ -133,16 +157,6 @@ public class CaptureService implements CoreCaptureService {
 
 	private String capture(VocabularyType vocabulary, Integer gcpLength) {
 		MongoCaptureUtil m = new MongoCaptureUtil();
-		return m.capture(vocabulary, null, null, gcpLength);
-	}
-
-	@Override
-	public void capture(EPCISDocumentType epcisDocument) {
-		capture(epcisDocument, null, null, null);
-	}
-
-	@Override
-	public void capture(EPCISMasterDataDocumentType epcisMasterDataDocument) {
-		capture(epcisMasterDataDocument, null);
+		return m.capture(vocabulary, null, gcpLength);
 	}
 }

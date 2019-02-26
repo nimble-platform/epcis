@@ -39,6 +39,8 @@ import org.oliot.model.epcis.QuantityEventExtensionType;
 import org.oliot.model.epcis.ReadPointExtensionType;
 import org.oliot.model.epcis.TransactionEventExtension2Type;
 import org.oliot.model.epcis.TransformationEventExtensionType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -58,8 +60,13 @@ import org.w3c.dom.Node;
  * 
  *         bjw0829@kaist.ac.kr, bjw0829@gmail.com
  */
+/**
+* Modifications copyright (C) 2019 Quan Deng
+* 
+*/
 
 public class MongoReaderUtil {
+    private static Logger log = LoggerFactory.getLogger(MongoReaderUtil.class);
 
 	static AttributeType getAttributeType(Document doc, String key, BsonValue attrValue) {
 		AttributeType attrType = new AttributeType();
@@ -104,7 +111,8 @@ public class MongoReaderUtil {
 			xmlEventTime = DatatypeFactory.newInstance().newXMLGregorianCalendar(eventCalendar);
 			return xmlEventTime;
 		} catch (DatatypeConfigurationException e) {
-			Configuration.logger.error(e.toString());
+			log.error(e.toString());
+
 		}
 		return null;
 	}
@@ -279,7 +287,8 @@ public class MongoReaderUtil {
 			}
 			return elementList;
 		} catch (ParserConfigurationException e) {
-			Configuration.logger.log(Level.ERROR, e.toString());
+			log.error(e.toString());
+
 		}
 		return null;
 	}
@@ -349,7 +358,8 @@ public class MongoReaderUtil {
 				object.setOtherAttributes(otherAttributes);
 			}
 		} catch (ParserConfigurationException e) {
-			Configuration.logger.log(Level.ERROR, e.toString());
+			log.error(e.toString());
+
 		}
 		return object;
 	}
@@ -413,7 +423,7 @@ public class MongoReaderUtil {
 				object.setOtherAttributes(otherAttributes);
 			}
 		} catch (ParserConfigurationException e) {
-			Configuration.logger.log(Level.ERROR, e.toString());
+			log.error(e.toString());
 		}
 		return object;
 	}
@@ -478,7 +488,7 @@ public class MongoReaderUtil {
 				object.setOtherAttributes(otherAttributes);
 			}
 		} catch (ParserConfigurationException e) {
-			Configuration.logger.log(Level.ERROR, e.toString());
+			log.error(e.toString());
 		}
 		return object;
 	}
@@ -584,7 +594,7 @@ public class MongoReaderUtil {
 				oee2t.setOtherAttributes(otherAttributes);
 			}
 		} catch (ParserConfigurationException e) {
-			Configuration.logger.log(Level.ERROR, e.toString());
+			log.error(e.toString());
 		}
 		return oee2t;
 	}
@@ -648,7 +658,7 @@ public class MongoReaderUtil {
 				object.setOtherAttributes(otherAttributes);
 			}
 		} catch (ParserConfigurationException e) {
-			Configuration.logger.log(Level.ERROR, e.toString());
+			log.error(e.toString());
 		}
 		return object;
 	}
@@ -713,7 +723,7 @@ public class MongoReaderUtil {
 				object.setOtherAttributes(otherAttributes);
 			}
 		} catch (ParserConfigurationException e) {
-			Configuration.logger.log(Level.ERROR, e.toString());
+			log.error(e.toString());
 		}
 		return object;
 	}
@@ -778,7 +788,7 @@ public class MongoReaderUtil {
 				object.setOtherAttributes(otherAttributes);
 			}
 		} catch (ParserConfigurationException e) {
-			Configuration.logger.log(Level.ERROR, e.toString());
+			log.error(e.toString());
 		}
 		return object;
 	}

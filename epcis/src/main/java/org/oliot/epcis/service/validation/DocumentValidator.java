@@ -38,6 +38,10 @@ import org.springframework.web.context.ServletContextAware;
  * 
  *         bjw0829@kaist.ac.kr, bjw0829@gmail.com
  */
+/**
+* Modifications copyright (C) 2019 Quan Deng
+* 
+*/
 
 @Controller
 public class DocumentValidator implements ServletContextAware {
@@ -58,7 +62,7 @@ public class DocumentValidator implements ServletContextAware {
 		responseHeaders.add("Content-Type", "application/json; charset=utf-8");
 		InputStream validateStream = CaptureUtil.getXMLDocumentInputStream(inputString);
 		String exception = CaptureUtil.getValidationException(validateStream,
-				Configuration.wsdlPath + "/EPCglobal-epcis-1_2.xsd");
+				"EPCglobal-epcis-1_2.xsd");
 		if (exception == null) {
 			retJSON.put("isValidated", true);
 			retJSON.put("schemaVersion", 1.2);
@@ -101,7 +105,7 @@ public class DocumentValidator implements ServletContextAware {
 		responseHeaders.add("Content-Type", "application/json; charset=utf-8");
 		InputStream validateStream = CaptureUtil.getXMLDocumentInputStream(inputString);
 		String exception = CaptureUtil.getValidationException(validateStream,
-				Configuration.wsdlPath + "/EPCglobal-epcis-masterdata-1_2.xsd");
+				"EPCglobal-epcis-masterdata-1_2.xsd");
 		if (exception == null) {
 			retJSON.put("isValidated", true);
 			retJSON.put("schemaVersion", 1.2);

@@ -12,21 +12,10 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
-/* added for json capture */
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.fge.jsonschema.core.exceptions.ProcessingException;
-import com.github.fge.jsonschema.core.report.ProcessingReport;
-import com.github.fge.jsonschema.main.JsonSchema;
-import com.github.fge.jsonschema.main.JsonSchemaFactory;
-
 /*added for json capture*/
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Level;
 import org.json.JSONObject;
-import org.oliot.epcis.configuration.Configuration;
-import org.oliot.epcis.security.OAuthUtil;
 import org.oliot.gcp.core.SimplePureIdentityFilter;
 import org.oliot.model.epcis.ActionType;
 import org.oliot.model.epcis.AggregationEventType;
@@ -38,10 +27,20 @@ import org.oliot.model.epcis.QuantityEventType;
 import org.oliot.model.epcis.StandardBusinessDocumentHeader;
 import org.oliot.model.epcis.TransactionEventType;
 import org.oliot.model.epcis.TransformationEventType;
+import org.oliot.model.xsdschema.XSDSchemaLoader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.xml.sax.SAXException;
+
+/* added for json capture */
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.fge.jsonschema.core.exceptions.ProcessingException;
+import com.github.fge.jsonschema.core.report.ProcessingReport;
+import com.github.fge.jsonschema.main.JsonSchema;
+import com.github.fge.jsonschema.main.JsonSchemaFactory;
 
 /**
  * Copyright (C) 2014-2016 Jaewook Byun
@@ -59,29 +58,39 @@ import org.xml.sax.SAXException;
  *         bjw0829@kaist.ac.kr, bjw0829@gmail.com
  */
 
+/**
+* Modifications copyright (C) 2019 Quan Deng
+*/
+
 public class CaptureUtil {
-	public static boolean validate(InputStream is, String xsdPath) {
+    private static Logger log = LoggerFactory.getLogger(CaptureUtil.class);
+
+    
+	public static boolean validate(InputStream is, String xsdSchemaName) {
 		try {
 			SchemaFactory schemaFactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
-			File xsdFile = new File(xsdPath);
+			XSDSchemaLoader xsdSchemaLoader = new XSDSchemaLoader();
+			File xsdFile = xsdSchemaLoader.getXSDSchema(xsdSchemaName);
 			Schema schema = schemaFactory.newSchema(xsdFile);
 			Validator validator = schema.newValidator();
 			StreamSource xmlSource = new StreamSource(is);
 			validator.validate(xmlSource);
 			return true;
 		} catch (SAXException e) {
-			Configuration.logger.log(Level.ERROR, e.toString());
+			log.error(e.toString());
 			return false;
 		} catch (IOException e) {
-			Configuration.logger.log(Level.ERROR, e.toString());
+			log.error(e.toString());
+
 			return false;
 		}
 	}
 
-	public static String getValidationException(InputStream is, String docPath) {
+	public static String getValidationException(InputStream is, String xsdSchemaName) {
 		try {
 			SchemaFactory schemaFactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
-			File xsdFile = new File(docPath);
+			XSDSchemaLoader xsdSchemaLoader = new XSDSchemaLoader();
+			File xsdFile = xsdSchemaLoader.getXSDSchema(xsdSchemaName);
 			Schema schema = schemaFactory.newSchema(xsdFile);
 			Validator validator = schema.newValidator();
 			StreamSource xmlSource = new StreamSource(is);
@@ -93,7 +102,7 @@ public class CaptureUtil {
 			return e.toString();
 		}
 	}
-
+	
 	public static boolean validate(JSONObject Json, JSONObject schema_obj) {
 		try {
 
@@ -105,14 +114,14 @@ public class CaptureUtil {
 			final JsonSchema schema = factory.getJsonSchema(schema_node);
 			ProcessingReport report;
 			report = schema.validate(input_node);
-			Configuration.logger.info("validation process report : " + report);
+			log.info("validation process report : " + report);
 			return report.isSuccess();
 
 		} catch (IOException e) {
-			Configuration.logger.log(Level.ERROR, e.toString());
+			log.error(e.toString());
 			return false;
 		} catch (ProcessingException e) {
-			Configuration.logger.log(Level.ERROR, e.toString());
+			log.error(e.toString());
 			return false;
 		}
 	}
@@ -161,32 +170,37 @@ public class CaptureUtil {
 				StandardBusinessDocumentHeader header = epcisDocument.getEPCISHeader()
 						.getStandardBusinessDocumentHeader();
 				if (header.getHeaderVersion() == null || !header.getHeaderVersion().equals("1.2")) {
-					Configuration.logger.error(" HeaderVersion should 1.2 if use SBDH ");
+					log.error(" HeaderVersion should 1.2 if use SBDH ");
+
 					return new ResponseEntity<>(new String("Error: HeaderVersion should 1.2 if use SBDH"),
 							HttpStatus.BAD_REQUEST);
 				}
 				if (header.getDocumentIdentification() == null) {
-					Configuration.logger.error(" DocumentIdentification should exist if use SBDH ");
+					log.error(" DocumentIdentification should exist if use SBDH ");
+
 					return new ResponseEntity<>(new String("Error: DocumentIdentification should exist if use SBDH"),
 							HttpStatus.BAD_REQUEST);
 				} else {
 					DocumentIdentification docID = header.getDocumentIdentification();
 					if (docID.getStandard() == null | !docID.getStandard().equals("EPCglobal")) {
-						Configuration.logger.error(" DocumentIdentification/Standard should EPCglobal if use SBDH ");
+						log.error(" DocumentIdentification/Standard should EPCglobal if use SBDH ");
 						return new ResponseEntity<>(
 								new String("Error: DocumentIdentification/Standard should EPCglobal if use SBDH"),
 								HttpStatus.BAD_REQUEST);
 					}
 					if (docID.getType() == null
 							|| (!docID.getType().equals("Events") && !docID.getType().equals("MasterData"))) {
-						Configuration.logger.error(
-								" DocumentIdentification/Type should Events|MasterData in Capture Method if use SBDH ");
-						return new ResponseEntity<>(new String(
-								"Error: DocumentIdentification/Type should Events|MasterData in Capture Method if use SBDH"),
+	
+						log.error(" DocumentIdentification/Type should Events|MasterData in Capture Method if use SBDH ");
+
+						return new ResponseEntity<>(
+								new String(
+										"Error: DocumentIdentification/Type should Events|MasterData in Capture Method if use SBDH"),
 								HttpStatus.BAD_REQUEST);
 					}
 					if (docID.getTypeVersion() == null | !docID.getTypeVersion().equals("1.2")) {
-						Configuration.logger.error(" DocumentIdentification/TypeVersion should 1.2 if use SBDH ");
+						log.error(" DocumentIdentification/TypeVersion should 1.2 if use SBDH ");
+
 						return new ResponseEntity<>(
 								new String("Error: DocumentIdentification/TypeVersion should 1.2 if use SBDH"),
 								HttpStatus.BAD_REQUEST);
@@ -198,21 +212,6 @@ public class CaptureUtil {
 		return null;
 	}
 
-	public static ResponseEntity<?> checkAccessToken(String userID, @RequestParam(required = false) String accessToken,
-			@RequestParam(required = false) String accessModifier) {
-		// Check accessToken
-		if (!OAuthUtil.isValidated(accessToken, userID)) {
-			return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.BAD_REQUEST);
-		}
-		if (accessModifier == null) {
-			return new ResponseEntity<>(new String("Need AccessModifier (Private,Friend)"), HttpStatus.BAD_REQUEST);
-		}
-		accessModifier = accessModifier.trim();
-		if (!accessModifier.equals("Private") && !accessModifier.equals("Friend")) {
-			return new ResponseEntity<>(new String("Need AccessModifier (Private,Friend)"), HttpStatus.BAD_REQUEST);
-		}
-		return null;
-	}
 
 	public static boolean isCorrectEvent(Object event) {
 		if (event instanceof ObjectEventType) {
@@ -234,19 +233,19 @@ public class CaptureUtil {
 		// M7
 		String timeZone = event.getEventTimeZoneOffset();
 		if (!CaptureUtil.isCorrectTimeZone(timeZone)) {
-			Configuration.logger.error("Req. M7 Error");
+			log.error("Req. M7 Error");
 			return false;
 		}
 
 		// Mandatory Field: Action
 		if (event.getAction() == null) {
-			Configuration.logger.error("Aggregation Event should have 'Action' field ");
+			log.error("Aggregation Event should have 'Action' field ");
 			return false;
 		}
 		// M13
 		if (event.getAction() == ActionType.ADD || event.getAction() == ActionType.DELETE) {
 			if (event.getParentID() == null) {
-				Configuration.logger.error("Req. M13 Error");
+				log.error("Req. M13 Error");
 				return false;
 			}
 		}
@@ -255,7 +254,7 @@ public class CaptureUtil {
 		if (parentID != null) {
 
 			if (SimplePureIdentityFilter.isPureIdentity(parentID) == false) {
-				Configuration.logger.error("Req. M10 Error");
+				log.error("Req. M10 Error");
 				return false;
 			}
 		}
@@ -267,7 +266,7 @@ public class CaptureUtil {
 		// M7
 		String timeZone = event.getEventTimeZoneOffset();
 		if (!CaptureUtil.isCorrectTimeZone(timeZone)) {
-			Configuration.logger.error("Req. M7 Error");
+			log.error("Req. M7 Error");
 			return false;
 		}
 		return true;
@@ -278,7 +277,7 @@ public class CaptureUtil {
 		// M7
 		String timeZone = event.getEventTimeZoneOffset();
 		if (!CaptureUtil.isCorrectTimeZone(timeZone)) {
-			Configuration.logger.error("Req. M7 Error");
+			log.error("Req. M7 Error");
 			return false;
 		}
 
@@ -287,7 +286,7 @@ public class CaptureUtil {
 		if (parentID != null) {
 
 			if (SimplePureIdentityFilter.isPureIdentity(parentID) == false) {
-				Configuration.logger.error("Req. M14 Error");
+				log.error("Req. M14 Error");
 				return false;
 			}
 		}
@@ -299,7 +298,7 @@ public class CaptureUtil {
 		// M7
 		String timeZone = event.getEventTimeZoneOffset();
 		if (!CaptureUtil.isCorrectTimeZone(timeZone)) {
-			Configuration.logger.error("Req. M7 Error");
+			log.error("Req. M7 Error");
 			return false;
 		}
 		return true;
@@ -310,7 +309,7 @@ public class CaptureUtil {
 		// M7
 		String timeZone = event.getEventTimeZoneOffset();
 		if (!CaptureUtil.isCorrectTimeZone(timeZone)) {
-			Configuration.logger.error("Req. M7 Error");
+			log.error("Req. M7 Error");
 			return false;
 		}
 		return true;

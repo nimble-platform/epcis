@@ -33,6 +33,10 @@ import com.mongodb.client.MongoCollection;
  * 
  *         bjw0829@kaist.ac.kr, bjw0829@gmail.com
  */
+/**
+* Modifications copyright (C) 2019 Quan Deng
+* 
+*/
 
 public class MongoQueryUtil {
 
@@ -197,16 +201,41 @@ public class MongoQueryUtil {
 			while (paramIterator.hasNext()) {
 				BsonValue param = paramIterator.next();
 				if (param instanceof BsonRegularExpression) {
-					BsonDocument regexQuery = new BsonDocument(field, new BsonDocument("$regex", param));
+					// BsonDocument regexQuery = new BsonDocument(field, new BsonDocument("$regex", param));
+					BsonDocument regexQuery = new BsonDocument(field,  param);
 					orQueries.add(regexQuery);
-				} else {
+				} 
+				// new update
+				else {
+					String value = param.asString().getValue();
+					// Pure Identity Pattern URIs 
+					if(value.startsWith("urn:epc:idpat:"))
+					{
+						value = value.replace("urn:epc:idpat:", "urn:epc:id:");
+						value = value.replace(".", "[.]");
+						value = value.replace("*", "(.)*");
+						BsonRegularExpression expr = new BsonRegularExpression("^" + value + "$");
+						BsonDocument regexQuery = new BsonDocument(field, expr);
+						orQueries.add(regexQuery);
+					}
+					// any other URI, it is matched against event field values by testing string equality
+					else
+					{
+						BsonDocument regexQuery = new BsonDocument(field, param);
+						orQueries.add(regexQuery);
+					}
+				}
+				// old code in the open source project
+				/*else {
 					String value = param.asString().getValue();
 					value = value.replace(".", "[.]");
 					value = value.replace("*", "(.)*");
-					BsonRegularExpression expr = new BsonRegularExpression(value);
-					BsonDocument regexQuery = new BsonDocument(field, new BsonDocument("$regex", expr));
+					// BsonRegularExpression expr = new BsonRegularExpression(value);
+					BsonRegularExpression expr = new BsonRegularExpression("^" + value + "$");
+					//BsonDocument regexQuery = new BsonDocument(field, new BsonDocument("$regex", expr));
+					BsonDocument regexQuery = new BsonDocument(field, expr);
 					orQueries.add(regexQuery);
-				}
+				}*/
 			}
 			/*
 			 * if (pureStringParamArray.size() != 0) { BsonDocument

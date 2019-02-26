@@ -2,12 +2,13 @@ package org.oliot.model.jsonschema;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
+import org.apache.commons.io.IOUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 /**
  * Copyright (C) 2014-2016 Jaewook Byun
@@ -35,7 +36,14 @@ import org.json.JSONObject;
  *         woosungpil@kaist.ac.kr, woosungpil7@gmail.com
  */
 
+/**
+* Modifications copyright (C) 2019 Quan Deng
+*/
+
 public class JsonSchemaLoader {
+	
+    private static Logger log = LoggerFactory.getLogger(JsonSchemaLoader.class);
+
 
 	JSONObject eventSchema;
 	JSONObject masterDataSchema;
@@ -43,32 +51,49 @@ public class JsonSchemaLoader {
 	JSONObject aggregationEventSchema;
 	JSONObject transformationEventSchema;
 	JSONObject transactionEventSchema;
+	JSONObject productionProcTemplateSchema;
 
 	public JsonSchemaLoader() {
 		try {
-			eventSchema = new JSONObject(new String(
-					Files.readAllBytes(Paths.get(getClass().getResource("GeneralEventSchema.json").toURI()))));
-			masterDataSchema = new JSONObject(
-					new String(Files.readAllBytes(Paths.get(getClass().getResource("GeneralMDSchema.json").toURI()))));
-			objectEventSchema = new JSONObject(new String(
-					Files.readAllBytes(Paths.get(getClass().getResource("ObjectEventSchema.json").toURI()))));
-			aggregationEventSchema = new JSONObject(new String(
-					Files.readAllBytes(Paths.get(getClass().getResource("AggregationEventSchema.json").toURI()))));
-			transformationEventSchema = new JSONObject(new String(
-					Files.readAllBytes(Paths.get(getClass().getResource("TransformationEventSchema.json").toURI()))));
-			transactionEventSchema = new JSONObject(new String(
-					Files.readAllBytes(Paths.get(getClass().getResource("TransactionEventSchema.json").toURI()))));
+			log.info(" JsonSchemaLoader Started.... ");
+
+			eventSchema = new JSONObject(getFileWithUtil("jsonSchema/GeneralEventSchema.json"));				
+			masterDataSchema = new JSONObject(getFileWithUtil("jsonSchema/GeneralMDSchema.json"));	
+			objectEventSchema = new JSONObject(getFileWithUtil("jsonSchema/ObjectEventSchema.json"));	
+			aggregationEventSchema = new JSONObject(getFileWithUtil("jsonSchema/AggregationEventSchema.json"));	
+			transformationEventSchema = new JSONObject(getFileWithUtil("jsonSchema/TransformationEventSchema.json"));	
+			transactionEventSchema = new JSONObject(getFileWithUtil("jsonSchema/TransactionEventSchema.json"));	
+			productionProcTemplateSchema = new JSONObject(getFileWithUtil("jsonSchema/ProductionProcessSchema.json"));	
+			log.info(" JsonSchemaLoader End.... ");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (JSONException e) {
 			e.printStackTrace();
-		} catch (URISyntaxException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
+	
+	  private String getFileWithUtil(String fileName) throws IOException {
+			String result = "";
+				
+			ClassLoader classLoader = getClass().getClassLoader();
+			result = IOUtils.toString(classLoader.getResourceAsStream(fileName));
 
+			return result;
+	}
+
+
+	public JSONObject getProductionProcTemplateSchema() {
+		return productionProcTemplateSchema;
+	}
+
+	public void setProductionProcTemplateSchema(JSONObject productionProcTemplateSchema) {
+		this.productionProcTemplateSchema = productionProcTemplateSchema;
+	}
+	
 	public JSONObject getEventSchema() {
 		return eventSchema;
 	}

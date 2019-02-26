@@ -1,13 +1,19 @@
 package org.oliot.epcis.service.query.mongodb;
 
+import static org.oliot.epcis.service.query.mongodb.MongoQueryUtil.encodeMongoObjectKey;
+import static org.oliot.epcis.service.query.mongodb.MongoQueryUtil.getCompExtensionQueryObject;
+import static org.oliot.epcis.service.query.mongodb.MongoQueryUtil.getExistsQueryObject;
+import static org.oliot.epcis.service.query.mongodb.MongoQueryUtil.getFamilyQueryObject;
+import static org.oliot.epcis.service.query.mongodb.MongoQueryUtil.getMatchQueryObject;
+import static org.oliot.epcis.service.query.mongodb.MongoQueryUtil.getNearQueryObject;
+import static org.oliot.epcis.service.query.mongodb.MongoQueryUtil.getParamBsonArray;
+import static org.oliot.epcis.service.query.mongodb.MongoQueryUtil.getQueryObject;
+import static org.oliot.epcis.service.query.mongodb.MongoQueryUtil.getWDParamBsonArray;
+
 import java.io.StringWriter;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -20,10 +26,8 @@ import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXB;
 import javax.xml.bind.JAXBElement;
-import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 
-import org.apache.log4j.Level;
 import org.bson.BsonArray;
 import org.bson.BsonBoolean;
 import org.bson.BsonDateTime;
@@ -44,10 +48,6 @@ import org.oliot.epcis.converter.mongodb.ObjectEventReadConverter;
 import org.oliot.epcis.converter.mongodb.QuantityEventReadConverter;
 import org.oliot.epcis.converter.mongodb.TransactionEventReadConverter;
 import org.oliot.epcis.converter.mongodb.TransformationEventReadConverter;
-import org.oliot.epcis.security.OAuthUtil;
-import org.oliot.epcis.service.subscription.MongoSubscription;
-import org.oliot.epcis.service.subscription.MongoSubscriptionTask;
-import org.oliot.epcis.service.subscription.TriggerEngine;
 import org.oliot.model.epcis.AggregationEventType;
 import org.oliot.model.epcis.AttributeType;
 import org.oliot.model.epcis.EPCISEventListExtensionType;
@@ -59,36 +59,26 @@ import org.oliot.model.epcis.ObjectEventType;
 import org.oliot.model.epcis.PollParameters;
 import org.oliot.model.epcis.QuantityEventType;
 import org.oliot.model.epcis.QueryParameterException;
-import org.oliot.model.epcis.QueryParams;
 import org.oliot.model.epcis.QueryResults;
 import org.oliot.model.epcis.QueryResultsBody;
-import org.oliot.model.epcis.QuerySchedule;
 import org.oliot.model.epcis.QueryTooLargeException;
 import org.oliot.model.epcis.SubscribeNotPermittedException;
-import org.oliot.model.epcis.SubscriptionControls;
 import org.oliot.model.epcis.SubscriptionControlsException;
-import org.oliot.model.epcis.SubscriptionType;
 import org.oliot.model.epcis.TransactionEventType;
 import org.oliot.model.epcis.TransformationEventType;
 import org.oliot.model.epcis.VocabularyElementType;
 import org.oliot.model.epcis.VocabularyListType;
 import org.oliot.model.epcis.VocabularyType;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.SchedulerException;
-import org.quartz.Trigger;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 
-import static org.oliot.epcis.service.query.mongodb.MongoQueryUtil.*;
-import static org.quartz.CronScheduleBuilder.cronSchedule;
-import static org.quartz.JobBuilder.newJob;
-import static org.quartz.JobKey.jobKey;
-import static org.quartz.TriggerBuilder.newTrigger;
-import static org.quartz.TriggerKey.triggerKey;
+import eu.nimble.service.epcis.services.AuthorizationSrv;
 
 /**
  * Copyright (C) 2014-2016 Jaewook Byun
@@ -106,231 +96,20 @@ import static org.quartz.TriggerKey.triggerKey;
  *         bjw0829@kaist.ac.kr, bjw0829@gmail.com
  */
 
+/**
+* Modifications copyright (C) 2019 Quan Deng
+*/
+
+@Component
 public class MongoQueryService {
+    private static Logger log = LoggerFactory.getLogger(MongoQueryService.class);
 
-	public String subscribeEventQuery(SubscriptionType s, String userID, List<String> friendList)
-			throws QueryParameterException, SubscriptionControlsException {
-
-		// M27 - query params' constraint
-		// M39 - query params' constraint
-		String reason = checkConstraintSimpleEventQuery(s.getPollParameters());
-		if (reason != null) {
-			throw new QueryParameterException();
-			// return makeErrorResult(reason, QueryParameterException.class);
-		}
-
-		// Existing subscription Check
-		MongoCollection<BsonDocument> collection = Configuration.mongoDatabase.getCollection("Subscription",
-				BsonDocument.class);
-		BsonDocument exist = collection.find(new BsonDocument("subscriptionID", new BsonString(s.getSubscriptionID())))
-				.first();
-		if (exist != null) {
-			return "SubscriptionID : " + s.getSubscriptionID() + " is already subscribed. ";
-		}
-
-		// cron Example
-		// 0/10 * * * * ? : every 10 second
-
-		if (s.getSchedule() != null && s.getTrigger() == null) {
-			try {
-				cronSchedule(s.getSchedule());
-				addScheduleToQuartz(s);
-
-			} catch (RuntimeException e) {
-				throw new SubscriptionControlsException();
-				// return makeErrorResult(e.toString(),
-				// SubscriptionControlsException.class);
-			}
-		} else if (s.getSchedule() == null && s.getTrigger() != null) {
-			// Add Trigger with Query
-			TriggerEngine.addTriggerSubscription(s.getSubscriptionID(), s);
-		} else {
-			throw new SubscriptionControlsException();
-			// return makeErrorResult("One of schedule, trigger should be null",
-			// SubscriptionControlsException.class);
-		}
-
-		// Manage Subscription Persistently
-		addScheduleToDB(s, userID, friendList);
-
-		String retString = "SubscriptionID : " + s.getSubscriptionID() + " is successfully triggered. ";
-		return retString;
-	}
-
-	public String subscribe(SubscriptionType s, String userID, List<String> friendList) throws QueryParameterException,
-			SubscriptionControlsException, InvalidURIException, SubscribeNotPermittedException {
-		// M20 : Throw an InvalidURIException for an incorrect dest argument in
-		// the subscribe method in EPCIS Query Control Interface
-		try {
-			new URL(s.getDest());
-		} catch (MalformedURLException e) {
-			throw new InvalidURIException();
-			// return makeErrorResult(e.toString(), InvalidURIException.class);
-		}
-
-		// M24 : Virtual Error Handling
-		// Automatically processed by URI param
-		// v1.2 not work
-		if (s.getDest() == null) {
-			throw new QueryParameterException();
-			// return makeErrorResult("Fill the mandatory field in subscribe
-			// method", QueryParameterException.class);
-		}
-
-		// M46
-		if (s.getPollParameters().getQueryName().equals("SimpleMasterDataQuery")) {
-			throw new SubscribeNotPermittedException();
-			// return makeErrorResult("SimpleMasterDataQuery is not available in
-			// subscription method", SubscribeNotPermittedException.class);
-		}
-
-		String retString = "";
-		if (s.getPollParameters().getQueryName().equals("SimpleEventQuery")) {
-			retString = subscribeEventQuery(s, userID, friendList);
-		}
-
-		return retString;
-	}
-
-	// Soap Query Adaptor
-	public void subscribe(String queryName, QueryParams params, URI dest, SubscriptionControls controls,
-			String subscriptionID) throws QueryParameterException, SubscriptionControlsException, InvalidURIException,
-			SubscribeNotPermittedException {
-		PollParameters p = new PollParameters(queryName, params);
-
-		// Subscription Control Processing
-		/*
-		 * QuerySchedule: (Optional) Defines the periodic schedule on which the
-		 * query is to be executed. See Section 8.2.5.3. Exactly one of schedule
-		 * or trigger is required; if both are specified or both are omitted,
-		 * the implementation SHALL raise a SubscriptionControls- Exception..
-		 */
-		QuerySchedule querySchedule = controls.getSchedule();
-		String schedule = null;
-		if (querySchedule != null) {
-			String sec = querySchedule.getSecond();
-			if (sec == null)
-				sec = "*";
-			String min = querySchedule.getMinute();
-			if (min == null)
-				min = "*";
-			String hour = querySchedule.getHour();
-			if (hour == null)
-				hour = "*";
-			String dayOfMonth = querySchedule.getDayOfMonth();
-			if (dayOfMonth == null)
-				dayOfMonth = "*";
-			String month = querySchedule.getMonth();
-			String dayOfWeek = querySchedule.getDayOfWeek();
-
-			// either month or dayOfWeek should be ?
-			// two are not null -> dayOfWeek = ?
-			// one of two exists -> non-exist = ?
-			// two are null -> month=* , dayOfWeek=?
-
-			if (month == null && dayOfWeek == null) {
-				month = "*";
-				dayOfWeek = "?";
-			} else if (month != null && dayOfWeek == null) {
-				dayOfWeek = "?";
-			} else if (month == null && dayOfWeek != null) {
-				month = "?";
-			} else {
-				dayOfWeek = "?";
-			}
-
-			schedule = sec + " " + min + " " + hour + " " + dayOfMonth + " " + month + " " + dayOfWeek;
-		}
-
-		/*
-		 * InitialRecordTime: (Optional) Specifies a time used to constrain what
-		 * events are considered when processing the query when it is executed
-		 * for the first time. See Section 8.2.5.2. If omitted, defaults to the
-		 * time at which the subscription is created.
-		 */
-		XMLGregorianCalendar initialRecordTime = controls.getInitialRecordTime();
-		String initialRecordTimeStr = null;
-		if (initialRecordTime != null) {
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-			Date initialRecordDate = initialRecordTime.toGregorianCalendar().getTime();
-			initialRecordTimeStr = sdf.format(initialRecordDate);
-		}
-
-		/*
-		 * reportIfEmpty: If true, a QueryResults instance is always sent to the
-		 * subscriber when the query is executed. If false, a QueryResults
-		 * instance is sent to the subscriber only when the results are
-		 * non-empty.
-		 */
-		Boolean reportIfEmpty = controls.isReportIfEmpty();
-
-		SubscriptionType subscription = new SubscriptionType(subscriptionID, dest.toString(), schedule,
-				controls.getTrigger(), initialRecordTimeStr, reportIfEmpty, p);
-
-		subscribe(subscription, null, null);
-
-	}
-
-	public void unsubscribe(String subscriptionID) {
-
-		MongoCollection<BsonDocument> collection = Configuration.mongoDatabase.getCollection("Subscription",
-				BsonDocument.class);
-
-		// Its size should be 0 or 1
-		BsonDocument s = collection
-				.findOneAndDelete(new BsonDocument("subscriptionID", new BsonString(subscriptionID)));
-
-		if (s != null) {
-			SubscriptionType subscription = new SubscriptionType(s);
-			if (subscription.getSchedule() != null && subscription.getTrigger() == null) {
-				// Remove from current Quartz
-				removeScheduleFromQuartz(subscription);
-			} else {
-				TriggerEngine.removeTriggerSubscription(subscription.getSubscriptionID());
-			}
-		}
-	}
-
-	public String getSubscriptionIDsREST(@PathVariable String queryName) {
-
-		JSONArray retArray = new JSONArray();
-
-		MongoCollection<BsonDocument> collection = Configuration.mongoDatabase.getCollection("Subscription",
-				BsonDocument.class);
-
-		Iterator<BsonDocument> subIterator = collection
-				.find(new BsonDocument("pollParameters.queryName", new BsonString(queryName)), BsonDocument.class)
-				.iterator();
-
-		while (subIterator.hasNext()) {
-			BsonDocument subscription = subIterator.next();
-			retArray.put(subscription.getString("subscriptionID").getValue());
-		}
-
-		return retArray.toString(1);
-	}
-
-	public List<String> getSubscriptionIDs(String queryName) {
-
-		List<String> retList = new ArrayList<String>();
-
-		MongoCollection<BsonDocument> collection = Configuration.mongoDatabase.getCollection("Subscription",
-				BsonDocument.class);
-
-		Iterator<BsonDocument> subIterator = collection
-				.find(new BsonDocument("pollParameters.queryName", new BsonString(queryName)), BsonDocument.class)
-				.iterator();
-
-		while (subIterator.hasNext()) {
-			BsonDocument subscription = subIterator.next();
-			retList.add(subscription.getString("subscriptionID").asString().getValue());
-		}
-
-		return retList;
-	}
-
+	@Autowired
+	AuthorizationSrv authorizationSrv;
+	
+	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public String pollEventQuery(PollParameters p, String userID, List<String> friendList, String subscriptionID)
+	public String pollEventQuery(PollParameters p, String userID)
 			throws QueryParameterException, QueryTooLargeException {
 
 		// M27 - query params' constraint
@@ -346,7 +125,7 @@ public class MongoQueryService {
 		EPCISQueryDocumentType epcisQueryDocumentType = null;
 
 		if (p.getFormat() == null || p.getFormat().equals("XML")) {
-			epcisQueryDocumentType = makeBaseResultDocument(p.getQueryName(), subscriptionID);
+			epcisQueryDocumentType = makeBaseResultDocument(p.getQueryName());
 		} else if (p.getFormat().equals("JSON")) {
 			// Do Nothing
 		} else {
@@ -370,7 +149,7 @@ public class MongoQueryService {
 		MongoCollection<BsonDocument> collection = Configuration.mongoDatabase.getCollection("EventData",
 				BsonDocument.class);
 		// Queries
-		BsonArray queryList = makeQueryObjects(p, userID, friendList);
+		BsonArray queryList = makeQueryObjects(p, userID);
 		// Merge All the queries with $and
 		BsonDocument baseQuery = new BsonDocument();
 		FindIterable<BsonDocument> cursor;
@@ -400,7 +179,8 @@ public class MongoQueryService {
 
 			String eventTypeInDoc = dbObject.getString("eventType").getValue();
 
-			if (OAuthUtil.isAccessible(userID, friendList, dbObject) == false) {
+			// Query permission control
+			if(!authorizationSrv.hasQueryPermission(userID, dbObject)){
 				continue;
 			}
 
@@ -614,7 +394,7 @@ public class MongoQueryService {
 		}
 	}
 
-	public String pollMasterDataQuery(PollParameters p, String userID, List<String> friendList)
+	public String pollMasterDataQuery(PollParameters p, String userID)
 			throws QueryTooLargeException, QueryParameterException {
 
 		// Required Field Check
@@ -630,7 +410,7 @@ public class MongoQueryService {
 		JSONArray retArray = new JSONArray();
 
 		if (p.getFormat() == null || p.getFormat().equals("XML")) {
-			epcisQueryDocumentType = makeBaseResultDocument(p.getQueryName(), null);
+			epcisQueryDocumentType = makeBaseResultDocument(p.getQueryName());
 		} else if (p.getFormat().equals("JSON")) {
 			// Do Nothing
 		} else {
@@ -772,15 +552,75 @@ public class MongoQueryService {
 			return retArray.toString(1);
 		}
 	}
+	
+	
 
-	// Soap Service Adaptor
-	public String poll(String queryName, QueryParams queryParams)
-			throws QueryParameterException, QueryTooLargeException {
-		PollParameters p = new PollParameters(queryName, queryParams);
-		return poll(p, null, null, null);
+	public String pollProductionProcTemplateQuery(String productClass)
+			throws QueryTooLargeException, QueryParameterException {
+		if(productClass == null || productClass.isEmpty())
+		{
+			throw new QueryParameterException();
+		}
+		
+		// Make Base Result Document
+		JSONArray retArray = new JSONArray();
+
+		MongoCollection<BsonDocument> collection = Configuration.mongoDatabase.getCollection("ProductionProcessTemplate",
+				BsonDocument.class);
+
+		// Make Query
+		BsonArray queryList = new BsonArray();
+		BsonArray paramArray = getParamBsonArray(productClass);
+		BsonDocument queryObject = getQueryObject(new String[] { "productClass" }, paramArray);
+		if (queryObject != null) {
+			queryList.add(queryObject);
+		}
+		
+		// Merge All the queries with $and
+		BsonDocument baseQuery = new BsonDocument();
+		FindIterable<BsonDocument> cursor;
+		if (queryList.isEmpty() == false) {
+			BsonArray aggreQueryList = new BsonArray();
+			for (int i = 0; i < queryList.size(); i++) {
+				aggreQueryList.add(queryList.get(i));
+			}
+			baseQuery.put("$and", aggreQueryList);
+			// Query
+			cursor = collection.find(baseQuery);
+		} else {
+			cursor = collection.find();
+		}
+
+		// Cursor needed to ordered
+		List<VocabularyType> vList = new ArrayList<>();
+
+		int foundProductionProcTemplateCount = 0;
+		MongoCursor<BsonDocument> slCursor = cursor.iterator();
+		while (slCursor.hasNext()) {
+			foundProductionProcTemplateCount++;
+			BsonDocument dbObject = slCursor.next();
+			dbObject.remove("_id");
+			
+			JSONObject jsonObject = new JSONObject(dbObject.toJson());
+			JSONArray jsonProcStepList = jsonObject.getJSONArray("productionProcessTemplate");
+			
+			for (int i = 0; i < jsonProcStepList.length(); i++) {
+				JSONObject jsonProcStepElement = jsonProcStepList.getJSONObject(i);
+				retArray.put(jsonProcStepElement);
+			}
+		}
+
+		int maxNumOfProcTemplateForOneProduct = 1;
+		if (foundProductionProcTemplateCount > maxNumOfProcTemplateForOneProduct) {
+			throw new QueryTooLargeException(retArray.length(), maxNumOfProcTemplateForOneProduct,
+					"ProductProcessTemplateQuery", null);
+		}
+		
+		return retArray.toString(1);
 	}
 
-	public String poll(PollParameters p, String userID, List<String> friendList, String subscriptionID)
+
+	public String poll(PollParameters p, String userID)
 			throws QueryParameterException, QueryTooLargeException {
 
 		// M24
@@ -792,10 +632,10 @@ public class MongoQueryService {
 		}
 
 		if (p.getQueryName().equals("SimpleEventQuery"))
-			return pollEventQuery(p, userID, friendList, subscriptionID);
+			return pollEventQuery(p, userID);
 
 		if (p.getQueryName().equals("SimpleMasterDataQuery"))
-			return pollMasterDataQuery(p, userID, friendList);
+			return pollMasterDataQuery(p, userID);
 		return "";
 	}
 
@@ -812,7 +652,7 @@ public class MongoQueryService {
 				eventTimeCalendar.setTime(sdf.parse(standardDateString));
 				return new BsonDateTime(eventTimeCalendar.getTimeInMillis());
 			} catch (ParseException e1) {
-				Configuration.logger.log(Level.ERROR, e1.toString());
+				log.error(e1.toString());
 			}
 		}
 		// Never Happened
@@ -954,7 +794,7 @@ public class MongoQueryService {
 		return null;
 	}
 
-	public EPCISQueryDocumentType makeBaseResultDocument(String queryName, String subscriptionID) {
+	public EPCISQueryDocumentType makeBaseResultDocument(String queryName) {
 		// Make Base Result Document
 		EPCISQueryDocumentType epcisQueryDocumentType = new EPCISQueryDocumentType();
 		EPCISQueryBodyType epcisBody = new EPCISQueryBodyType();
@@ -964,8 +804,7 @@ public class MongoQueryService {
 		epcisBody.setQueryResults(queryResults);
 		QueryResultsBody queryResultsBody = new QueryResultsBody();
 		queryResults.setResultsBody(queryResultsBody);
-		if (subscriptionID != null)
-			queryResults.setSubscriptionID(subscriptionID);
+
 		EventListType eventListType = new EventListType();
 		queryResultsBody.setEventList(eventListType);
 		// Object instanceof JAXBElement
@@ -1146,14 +985,15 @@ public class MongoQueryService {
 			try {
 				cursor = cursor.limit(eventCountLimit);
 			} catch (NumberFormatException nfe) {
-				Configuration.logger.log(Level.ERROR, nfe.toString());
+				log.error(nfe.toString());
+
 			}
 		}
 
 		return cursor;
 	}
 
-	private BsonArray makeQueryObjects(PollParameters p, String userID, List<String> friendList) {
+	private BsonArray makeQueryObjects(PollParameters p, String userID) {
 
 		BsonArray queryList = new BsonArray();
 
@@ -1623,7 +1463,8 @@ public class MongoQueryService {
 					try {
 						objectIDParamArray.add(new BsonObjectId(new ObjectId(paramValue.asString().getValue())));
 					} catch (IllegalArgumentException e) {
-						Configuration.logger.debug("Non MongoDB ObjectID: " + e.toString());
+						log.debug("Non MongoDB ObjectID: " + e.toString());
+
 					}
 				}
 			}
@@ -2570,58 +2411,5 @@ public class MongoQueryService {
 		return queryList;
 	}
 
-	public void addScheduleToQuartz(SubscriptionType subscription) {
-		try {
-			JobDataMap map = new JobDataMap();
-			map.put("jobData", SubscriptionType.asBsonDocument(subscription));
-
-			JobDetail job = newJob(MongoSubscriptionTask.class)
-					.withIdentity(subscription.getSubscriptionID(), subscription.getPollParameters().getQueryName())
-					.setJobData(map).storeDurably(false).build();
-
-			Trigger trigger = newTrigger()
-					.withIdentity(subscription.getSubscriptionID(), subscription.getPollParameters().getQueryName())
-					.startNow().withSchedule(cronSchedule(subscription.getSchedule())).build();
-
-			if (MongoSubscription.sched.isStarted() != true)
-				MongoSubscription.sched.start();
-			MongoSubscription.sched.scheduleJob(job, trigger);
-			Configuration.logger.log(Level.INFO,
-					"Subscription ID: " + subscription.getSubscriptionID() + " is added to quartz scheduler. ");
-		} catch (SchedulerException e) {
-			Configuration.logger.log(Level.ERROR, e.toString());
-		} catch (RuntimeException e) {
-			Configuration.logger.log(Level.ERROR, e.toString());
-		}
-	}
-
-	private boolean addScheduleToDB(SubscriptionType s, String userID, List<String> friendList) {
-
-		MongoCollection<BsonDocument> collection = Configuration.mongoDatabase.getCollection("Subscription",
-				BsonDocument.class);
-
-		BsonDocument subscription = collection
-				.find(new BsonDocument("subscriptionID", new BsonString(s.getSubscriptionID()))).first();
-
-		if (subscription == null) {
-			collection.insertOne(SubscriptionType.asBsonDocument(s));
-		}
-
-		Configuration.logger.log(Level.INFO, "Subscription ID: " + s.getSubscriptionID() + " is added to DB. ");
-		return true;
-	}
-
-	private void removeScheduleFromQuartz(SubscriptionType subscription) {
-		try {
-			MongoSubscription.sched.unscheduleJob(
-					triggerKey(subscription.getSubscriptionID(), subscription.getPollParameters().getQueryName()));
-			MongoSubscription.sched.deleteJob(
-					jobKey(subscription.getSubscriptionID(), subscription.getPollParameters().getQueryName()));
-			Configuration.logger.log(Level.INFO,
-					"Subscription ID: " + subscription.getSubscriptionID() + " is removed from scheduler");
-		} catch (SchedulerException e) {
-			Configuration.logger.log(Level.ERROR, e.toString());
-		}
-	}
 
 }

@@ -2,22 +2,26 @@ package org.oliot.epcis.service.capture;
 
 import java.io.InputStream;
 
-import javax.servlet.ServletContext;
 import javax.xml.bind.JAXB;
 
 import org.json.JSONObject;
 import org.oliot.epcis.configuration.Configuration;
 import org.oliot.model.epcis.EPCISDocumentType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.context.ServletContextAware;
+import org.springframework.web.bind.annotation.RestController;
+
+import eu.nimble.service.epcis.services.AuthorizationSrv;
 
 /**
  * Copyright (C) 2014-2017 Jaewook Byun
@@ -35,50 +39,56 @@ import org.springframework.web.context.ServletContextAware;
  *         bjw0829@kaist.ac.kr, bjw0829@gmail.com
  */
 
-@Controller
+/**
+* Modifications copyright (C) 2019 Quan Deng
+*/
+
+@CrossOrigin()
+@RestController
 @RequestMapping("/EventCapture")
-public class EventCapture implements ServletContextAware {
+public class EventCapture {
+    private static Logger log = LoggerFactory.getLogger(EventCapture.class);
 
 	@Autowired
-	ServletContext servletContext;
+	AuthorizationSrv authorizationSrv;
+	
+	@Autowired
+	CaptureService 	captureService;
 
-	@Override
-	public void setServletContext(ServletContext servletContext) {
-		this.servletContext = servletContext;
-	}
-
-	public ResponseEntity<?> asyncPost(String inputString) {
-		ResponseEntity<?> result = post(inputString, null, null, null, null);
-		return result;
-	}
-
+	
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<?> post(@RequestBody String inputString, @RequestParam(required = false) String userID,
-			@RequestParam(required = false) String accessToken, @RequestParam(required = false) String accessModifier,
+	/**
+	 * 
+	 * @param inputString
+	 * @param accessToken 
+	 * @param gcpLength Global Company Prefix(GCP) length. 
+	 * @return
+	 */
+	public ResponseEntity<?> post(@RequestBody String inputString, 
+			@RequestHeader(value="Authorization", required=true) String accessToken, 
 			@RequestParam(required = false) Integer gcpLength) {
 		JSONObject retMsg = new JSONObject();
 
-		// Facebook Auth.: Access Token Validation
-		if (userID != null) {
-			ResponseEntity<?> isError = CaptureUtil.checkAccessToken(userID, accessToken, accessModifier);
-			if (isError != null)
-				return isError;
+		// Check NIMBLE authorization
+		String userPartyID = authorizationSrv.checkToken(accessToken);
+		if (userPartyID == null) {
+			return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
 		}
 
-		Configuration.logger.info(" EPCIS Document Capture Started.... ");
+		log.info(" EPCIS Document Capture Started.... ");
 
 		// XSD based Validation
 		if (Configuration.isCaptureVerfificationOn == true) {
 			InputStream validateStream = CaptureUtil.getXMLDocumentInputStream(inputString);
 			boolean isValidated = CaptureUtil.validate(validateStream,
-					Configuration.wsdlPath + "/EPCglobal-epcis-1_2.xsd");
+					 "/EPCglobal-epcis-1_2.xsd");
 			if (isValidated == false) {
 				return new ResponseEntity<>(
 						new String("[Error] Input EPCIS Document does not comply the standard schema"),
 						HttpStatus.BAD_REQUEST);
 			}
-			Configuration.logger.info(" EPCIS Document : Validated ");
+			log.info(" EPCIS Document : Validated ");
 
 		}
 
@@ -91,9 +101,8 @@ public class EventCapture implements ServletContextAware {
 				return error;
 		}
 
-		CaptureService cs = new CaptureService();
-		retMsg = cs.capture(epcisDocument, userID, accessModifier, gcpLength);
-		Configuration.logger.info(" EPCIS Document : Captured ");
+		retMsg = captureService.capture(epcisDocument, userPartyID, gcpLength);
+		log.info(" EPCIS Document : Captured ");
 
 		if (retMsg.isNull("error") == true)
 			return new ResponseEntity<>(retMsg.toString(), HttpStatus.OK);

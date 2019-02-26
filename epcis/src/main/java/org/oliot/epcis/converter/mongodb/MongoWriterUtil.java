@@ -46,6 +46,8 @@ import org.oliot.model.epcis.SourceListType;
 import org.oliot.model.epcis.TransactionEventExtension2Type;
 import org.oliot.model.epcis.TransactionEventExtensionType;
 import org.oliot.model.epcis.TransformationEventExtensionType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -67,8 +69,13 @@ import org.w3c.dom.Text;
  * 
  *         bjw0829@kaist.ac.kr, bjw0829@gmail.com
  */
+/**
+* Modifications copyright (C) 2019 Quan Deng
+* 
+*/
 
 public class MongoWriterUtil {
+    private static Logger log = LoggerFactory.getLogger(MongoWriterUtil.class);
 
 	static String getInstanceEPC(String code, Integer gcpLength) {
 		if (gcpLength == null) {
@@ -814,7 +821,7 @@ public class MongoWriterUtil {
 				eventTimeCalendar.setTime(sdf.parse(standardDateString));
 				return new BsonDateTime(eventTimeCalendar.getTimeInMillis());
 			} catch (ParseException e1) {
-				Configuration.logger.log(Level.ERROR, e1.toString());
+				log.error(e1.toString());
 			}
 		}
 		// Never Happened

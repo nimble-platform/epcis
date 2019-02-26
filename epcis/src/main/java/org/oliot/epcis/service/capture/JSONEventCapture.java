@@ -1,25 +1,28 @@
 package org.oliot.epcis.service.capture;
 
-import javax.servlet.ServletContext;
 import java.util.Iterator;
 
-import org.apache.log4j.Level;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.oliot.epcis.configuration.Configuration;
 import org.oliot.epcis.service.capture.mongodb.MongoCaptureUtil;
 import org.oliot.model.jsonschema.JsonSchemaLoader;
-import org.oliot.epcis.configuration.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.context.ServletContextAware;
+import org.springframework.web.bind.annotation.RestController;
+
+import eu.nimble.service.epcis.services.AuthorizationSrv;
 
 /**
  * Copyright (C) 2017 Jaewook Jack Byun, Sungpil Woo
@@ -46,31 +49,36 @@ import org.springframework.web.context.ServletContextAware;
  *         woosungpil@kaist.ac.kr, woosungpil7@gmail.com
  */
 
-@Controller
+/**
+* Modifications copyright (C) 2019 Quan Deng
+*/
+
+
+@CrossOrigin()
+@RestController
 @RequestMapping("/JSONEventCapture")
-public class JSONEventCapture implements ServletContextAware {
+public class JSONEventCapture {
+    private static Logger log = LoggerFactory.getLogger(JSONEventCapture.class);
 
 	@Autowired
-	ServletContext servletContext;
-
-	@Override
-	public void setServletContext(ServletContext servletContext) {
-		this.servletContext = servletContext;
-	}
-
-	public ResponseEntity<?> asyncPost(String inputString) {
-		ResponseEntity<?> result = post(inputString, null, null, null, null);
-		return result;
-	}
-
+	AuthorizationSrv authorizationSrv;
+	
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<?> post(@RequestBody String inputString, @RequestParam(required = false) String userID,
-			@RequestParam(required = false) String accessToken, @RequestParam(required = false) String accessModifier,
+	public ResponseEntity<?> post(@RequestBody String inputString,
+			@RequestHeader(value="Authorization", required=true) String accessToken, 
 			@RequestParam(required = false) Integer gcpLength) {
-		// JSONObject retMsg = new JSONObject();
-
-		Configuration.logger.info(" EPCIS Json Document Capture Started.... ");
+		
+		// Check NIMBLE authorization
+		String userPartyID = authorizationSrv.checkToken(accessToken);
+		if (userPartyID == null) {
+			return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
+		}
+		
+		//TODO: Permission check for each event on the list. Return error, in case no permission on some events.
+		//TODO: Save userPartyID into Event i.e. MongoDB. So that it is possible to know from whom the event is added, for the purpose of audit etc.   
+		
+		log.info(" EPCIS Json Document Capture Started.... ");
 
 		if (Configuration.isCaptureVerfificationOn == true) {
 
@@ -83,7 +91,7 @@ public class JSONEventCapture implements ServletContextAware {
 				JSONObject jsonEventSchema = schemaLoader.getEventSchema();
 
 				if (!CaptureUtil.validate(jsonEvent, jsonEventSchema)) {
-					Configuration.logger.info("Json Document is invalid" + " about general_validcheck");
+					log.info("Json Document is invalid" + " about general_validcheck");
 
 					return new ResponseEntity<>("Error: Json Document is not valid" + "general_validcheck",
 							HttpStatus.BAD_REQUEST);
@@ -105,7 +113,7 @@ public class JSONEventCapture implements ServletContextAware {
 						JSONObject jsonObjectEvent = jsonEventElement.getJSONObject("ObjectEvent");
 
 						if (!CaptureUtil.validate(jsonObjectEvent, objectEventSchema)) {
-							Configuration.logger
+							log
 									.info("Json Document is not valid" + " detail validation check for objectevent");
 							return new ResponseEntity<>("Error: Json Document is not valid"
 									+ " for detail validation check for objectevent", HttpStatus.BAD_REQUEST);
@@ -115,6 +123,10 @@ public class JSONEventCapture implements ServletContextAware {
 						/* finish validation logic for ObjectEvent */
 						if (!jsonObjectEvent.has("recordTime")) {
 							jsonObjectEvent.put("recordTime", System.currentTimeMillis());
+						}
+						
+						if (!jsonObjectEvent.has("eventType")) {
+							jsonObjectEvent.put("eventType", "ObjectEvent");
 						}
 
 						if (jsonObjectEvent.has("any")) {
@@ -133,7 +145,7 @@ public class JSONEventCapture implements ServletContextAware {
 							}
 
 							if (!namespace_flag) {
-								Configuration.logger.info("Json Document doesn't have namespace in any field");
+								log.info("Json Document doesn't have namespace in any field");
 								return new ResponseEntity<>(
 										"Error: Json Document doesn't have namespace in any field"
 												+ " for detail validation check for objectevent",
@@ -151,7 +163,7 @@ public class JSONEventCapture implements ServletContextAware {
 								String temp = keyIter.next();
 
 								if (!temp.contains(namespace)) {
-									Configuration.logger.info("Json Document use invalid namespace in anyfield");
+									log.info("Json Document use invalid namespace in anyfield");
 
 									return new ResponseEntity<>(
 											"Error: Json Document use invalid namespace in anyfield"
@@ -179,7 +191,7 @@ public class JSONEventCapture implements ServletContextAware {
 
 						if (!CaptureUtil.validate(jsonAggregationEvent, aggregationEventSchema)) {
 
-							Configuration.logger.info(
+							log.info(
 									"Json Document is not valid" + " detail validation check for aggregationevent");
 
 							return new ResponseEntity<>(
@@ -192,6 +204,10 @@ public class JSONEventCapture implements ServletContextAware {
 
 						if (!jsonAggregationEvent.has("recordTime")) {
 							jsonAggregationEvent.put("recordTime", System.currentTimeMillis());
+						}
+						
+						if (!jsonAggregationEvent.has("eventType")) {
+							jsonAggregationEvent.put("eventType", "AggregationEvent");
 						}
 
 						if (jsonAggregationEvent.has("any")) {
@@ -210,7 +226,7 @@ public class JSONEventCapture implements ServletContextAware {
 							}
 
 							if (!namespace_flag) {
-								Configuration.logger.info("Json Document doesn't have namespace in any field");
+								log.info("Json Document doesn't have namespace in any field");
 
 								return new ResponseEntity<>(
 										"Error: Json Document doesn't have namespace in any field"
@@ -229,7 +245,7 @@ public class JSONEventCapture implements ServletContextAware {
 								String temp = keyIter.next();
 
 								if (!temp.contains(namespace)) {
-									Configuration.logger.info("Json Document use invalid namespace in anyfield");
+									log.info("Json Document use invalid namespace in anyfield");
 
 									return new ResponseEntity<>(
 											"Error: Json Document use invalid namespace in anyfield"
@@ -253,7 +269,7 @@ public class JSONEventCapture implements ServletContextAware {
 
 						if (!CaptureUtil.validate(jsonTransformationEvent, transformationEventSchema)) {
 
-							Configuration.logger.info(
+							log.info(
 									"Json Document is not valid" + " detail validation check for TransFormationEvent");
 
 							return new ResponseEntity<>(
@@ -266,6 +282,10 @@ public class JSONEventCapture implements ServletContextAware {
 
 						if (!jsonTransformationEvent.has("recordTime")) {
 							jsonTransformationEvent.put("recordTime", System.currentTimeMillis());
+						}
+						
+						if (!jsonTransformationEvent.has("eventType")) {
+							jsonTransformationEvent.put("eventType", "TransformationEvent");
 						}
 
 						if (jsonTransformationEvent.has("any")) {
@@ -284,7 +304,7 @@ public class JSONEventCapture implements ServletContextAware {
 							}
 
 							if (!namespace_flag) {
-								Configuration.logger.info("Json Document doesn't have namespace in any field");
+								log.info("Json Document doesn't have namespace in any field");
 								return new ResponseEntity<>(
 										"Error: Json Document doesn't have namespace in any field"
 												+ " for detail validation check for TransformationEvent",
@@ -302,7 +322,7 @@ public class JSONEventCapture implements ServletContextAware {
 								String temp = keyIter.next();
 
 								if (!temp.contains(namespace)) {
-									Configuration.logger.info("Json Document use invalid namespace in anyfield");
+									log.info("Json Document use invalid namespace in anyfield");
 									return new ResponseEntity<>(
 											"Error: Json Document use invalid namespace in anyfield"
 													+ " for detail validation check for TransformationEvent",
@@ -324,7 +344,7 @@ public class JSONEventCapture implements ServletContextAware {
 
 						if (!CaptureUtil.validate(jsonTransactionEvent, transactionEventSchema)) {
 
-							Configuration.logger.info(
+							log.info(
 									"Json Document is not valid." + " detail validation check for TransactionEvent");
 							return new ResponseEntity<>(
 									"Error: Json Document is not valid"
@@ -336,6 +356,10 @@ public class JSONEventCapture implements ServletContextAware {
 
 						if (!jsonTransactionEvent.has("recordTime")) {
 							jsonTransactionEvent.put("recordTime", System.currentTimeMillis());
+						}
+						
+						if (!jsonTransactionEvent.has("eventType")) {
+							jsonTransactionEvent.put("eventType", "TransactionEvent");
 						}
 
 						if (jsonTransactionEvent.has("any")) {
@@ -354,7 +378,7 @@ public class JSONEventCapture implements ServletContextAware {
 							}
 
 							if (!namespace_flag) {
-								Configuration.logger.info("Json Document doesn't have namespace in any field");
+								log.info("Json Document doesn't have namespace in any field");
 								return new ResponseEntity<>(
 										"Error: Json Document doesn't have namespace in any field"
 												+ " for detail validation check for TransactionEvent",
@@ -372,7 +396,7 @@ public class JSONEventCapture implements ServletContextAware {
 								String temp = keyIter.next();
 
 								if (!temp.contains(namespace)) {
-									Configuration.logger.info("Json Document use invalid namespace in anyfield");
+									log.info("Json Document use invalid namespace in anyfield");
 									return new ResponseEntity<>(
 											"Error: Json Document use invalid namespace in anyfield"
 													+ " for detail validation check for TransactionEvent",
@@ -385,7 +409,7 @@ public class JSONEventCapture implements ServletContextAware {
 						MongoCaptureUtil m = new MongoCaptureUtil();
 						m.captureJSONEvent(jsonEventList.getJSONObject(i).getJSONObject("TransactionEvent"));
 					} else {
-						Configuration.logger
+						log
 								.info("Json Document is not valid. " + " It doesn't have standard event_type");
 						return new ResponseEntity<>(
 								"Error: Json Document is not valid" + " It doesn't have standard event_type",
@@ -395,12 +419,12 @@ public class JSONEventCapture implements ServletContextAware {
 
 				}
 				if (jsonEventList.length() != 0)
-					Configuration.logger.info(" EPCIS Document : Captured ");
+					log.info(" EPCIS Document : Captured ");
 
 			} catch (JSONException e) {
-				Configuration.logger.info(" Json Document is not valid " + "second_validcheck");
+				log.info(" Json Document is not valid " + "second_validcheck");
 			} catch (Exception e) {
-				Configuration.logger.log(Level.ERROR, e.toString());
+				log.error(e.toString());
 			}
 
 			return new ResponseEntity<>("EPCIS Document : Captured ", HttpStatus.OK);
