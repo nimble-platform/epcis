@@ -1,6 +1,6 @@
 ### NIMBLE EPCIS Repository ###
-> Note: This Repo is forked from [URL](https://github.com/JaewookByun/epcis)
-> This project is part of NIMBLE Project (https://www.nimble-project.org).
+> Note: This Repo is forked from [URL](https://github.com/JaewookByun/epcis).
+> This Repo is part of NIMBLE Project (https://www.nimble-project.org).
 
 ### Introduction ###
 > EPC Information Service (EPCIS) REST APIs enables to capture and query standardized event/master data ratified by GS1.
