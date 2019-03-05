@@ -20,7 +20,7 @@ spring:
       database:  ${EPCIS_DB_NAME:epcis} 
       #host: ${EPCIS_DB_HOST:127.0.0.1}  #docker.xxx.xxx.uni-bremen.de
       #password: <password>
-      #
+      ##
       #port: 27017 #8118
       #username: <username>
       #ssl-enabled: true
