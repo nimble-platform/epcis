@@ -12,6 +12,9 @@ MAINTAINER Salzburg Research <nimble-srfg@salzburgresearch.at>
 COPY /resources /resources
 RUN ls /resources
 
+#COPY /resources/ca.crt /usr/local/share/ca-certificates/
+#RUN update-ca-certificates
+
 VOLUME /tmp
 ARG finalName
 ENV JAR '/'$finalName

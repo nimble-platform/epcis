@@ -31,7 +31,7 @@ public class NIMBLETokenController {
     @Autowired
     private RestTemplate restTemplate;
 	
-	@PostMapping("/getToken")
+	@PostMapping("/getBearerToken")
 	public ResponseEntity<?> getAccessToken(@RequestParam(required = true) String userID,
 			@RequestParam(required = true) String password)
 	{
@@ -54,7 +54,9 @@ public class NIMBLETokenController {
 	        JSONObject jsonUser = new JSONObject(result);
 	        token = jsonUser.getString("accessToken");
 	        
-	        return ResponseEntity.ok(token);
+	        String bearerToken = "Bearer " +  token;
+	        
+	        return ResponseEntity.ok(bearerToken);
         } catch (HttpStatusCodeException e) {
         	log.error("Received error during login into NIMBLE platform: " + e.getResponseBodyAsString());
         }

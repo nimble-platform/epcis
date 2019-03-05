@@ -59,11 +59,11 @@ public class VocabularyCapture {
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<?> post(@RequestBody String inputString, @RequestHeader(value="Authorization", required=true) String accessToken, 
+	public ResponseEntity<?> post(@RequestBody String inputString, @RequestHeader(value="Authorization", required=true) String bearerToken, 
 			@RequestParam(required = false) Integer gcpLength) {
 
 		// Check NIMBLE authorization
-		String userPartyID = authorizationSrv.checkToken(accessToken);
+		String userPartyID = authorizationSrv.checkToken(bearerToken);
 		if (userPartyID == null) {
 			return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
 		}
@@ -88,7 +88,7 @@ public class VocabularyCapture {
 		InputStream epcisStream = CaptureUtil.getXMLDocumentInputStream(inputString);
 		EPCISMasterDataDocumentType epcisMasterDataDocument = JAXB.unmarshal(epcisStream,
 				EPCISMasterDataDocumentType.class);
-		retMsg = captureService.capture(epcisMasterDataDocument, gcpLength);
+		retMsg = captureService.capture(epcisMasterDataDocument, userPartyID,  gcpLength);
 		log.info(" EPCIS Masterdata Document : Captured ");
 
 		if (retMsg.isNull("error") == true)

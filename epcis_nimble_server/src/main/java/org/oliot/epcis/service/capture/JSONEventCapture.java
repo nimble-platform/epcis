@@ -66,11 +66,11 @@ public class JSONEventCapture {
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
 	public ResponseEntity<?> post(@RequestBody String inputString,
-			@RequestHeader(value="Authorization", required=true) String accessToken, 
+			@RequestHeader(value="Authorization", required=true) String bearerToken, 
 			@RequestParam(required = false) Integer gcpLength) {
 		
 		// Check NIMBLE authorization
-		String userPartyID = authorizationSrv.checkToken(accessToken);
+		String userPartyID = authorizationSrv.checkToken(bearerToken);
 		if (userPartyID == null) {
 			return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
 		}
@@ -179,7 +179,7 @@ public class JSONEventCapture {
 						}
 
 						MongoCaptureUtil m = new MongoCaptureUtil();
-						m.captureJSONEvent(jsonObjectEvent);
+						m.captureJSONEvent(jsonObjectEvent, userPartyID);
 
 					} else if (jsonEventElement.has("AggregationEvent") == true) {
 
@@ -257,7 +257,7 @@ public class JSONEventCapture {
 
 						}
 						MongoCaptureUtil m = new MongoCaptureUtil();
-						m.captureJSONEvent(jsonEventList.getJSONObject(i).getJSONObject("AggregationEvent"));
+						m.captureJSONEvent(jsonEventList.getJSONObject(i).getJSONObject("AggregationEvent"), userPartyID);
 
 					} else if (jsonEventElement.has("TransformationEvent") == true) {
 
@@ -332,7 +332,7 @@ public class JSONEventCapture {
 						}
 
 						MongoCaptureUtil m = new MongoCaptureUtil();
-						m.captureJSONEvent(jsonEventList.getJSONObject(i).getJSONObject("TransformationEvent"));
+						m.captureJSONEvent(jsonEventList.getJSONObject(i).getJSONObject("TransformationEvent"), userPartyID);
 
 					} else if (jsonEventElement.has("TransactionEvent") == true) {
 
@@ -407,7 +407,7 @@ public class JSONEventCapture {
 						}
 
 						MongoCaptureUtil m = new MongoCaptureUtil();
-						m.captureJSONEvent(jsonEventList.getJSONObject(i).getJSONObject("TransactionEvent"));
+						m.captureJSONEvent(jsonEventList.getJSONObject(i).getJSONObject("TransactionEvent"), userPartyID);
 					} else {
 						log
 								.info("Json Document is not valid. " + " It doesn't have standard event_type");
@@ -440,16 +440,16 @@ public class JSONEventCapture {
 
 				if (jsonEventElement.has("ObjectEvent") == true) {
 					MongoCaptureUtil m = new MongoCaptureUtil();
-					m.captureJSONEvent(jsonEventElement.getJSONObject("ObjectEvent"));
+					m.captureJSONEvent(jsonEventElement.getJSONObject("ObjectEvent"), userPartyID);
 				} else if (jsonEventElement.has("AggregationEvent") == true) {
 					MongoCaptureUtil m = new MongoCaptureUtil();
-					m.captureJSONEvent(jsonEventElement.getJSONObject("AggregationEvent"));
+					m.captureJSONEvent(jsonEventElement.getJSONObject("AggregationEvent"), userPartyID);
 				} else if (jsonEventElement.has("TransformationEvent") == true) {
 					MongoCaptureUtil m = new MongoCaptureUtil();
-					m.captureJSONEvent(jsonEventElement.getJSONObject("TransformationEvent"));
+					m.captureJSONEvent(jsonEventElement.getJSONObject("TransformationEvent"), userPartyID);
 				} else if (jsonEventElement.has("TransactionEvent") == true) {
 					MongoCaptureUtil m = new MongoCaptureUtil();
-					m.captureJSONEvent(jsonEventElement.getJSONObject("TransactionEvent"));
+					m.captureJSONEvent(jsonEventElement.getJSONObject("TransactionEvent"), userPartyID);
 				}
 			}
 		}

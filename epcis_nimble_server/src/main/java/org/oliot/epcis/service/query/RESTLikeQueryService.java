@@ -148,11 +148,11 @@ public class RESTLikeQueryService {
 	// TODO:
 	@RequestMapping(value = "/GetProductionProcessTemplate/{productClass}", method = RequestMethod.GET)
 	@ResponseBody
-    public ResponseEntity<?> getProductionProcessTemplate(@PathVariable String productClass, @RequestHeader(value="Authorization", required=true) String accessToken) 
+    public ResponseEntity<?> getProductionProcessTemplate(@PathVariable String productClass, @RequestHeader(value="Authorization", required=true) String bearerToken) 
     		throws IOException, QueryTooLargeException, QueryParameterException {
 		
 		// Check NIMBLE authorization
-		String userPartyID = authorizationSrv.checkToken(accessToken);
+		String userPartyID = authorizationSrv.checkToken(bearerToken);
 		if (userPartyID == null) {
 			return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
 		}
@@ -169,7 +169,9 @@ public class RESTLikeQueryService {
 
 	@RequestMapping(value = "/Poll/{queryName}", method = RequestMethod.GET)
 	@ResponseBody
-	public ResponseEntity<?> poll(@PathVariable String queryName, @RequestParam(required = false) String eventType,
+	public ResponseEntity<?> poll(@PathVariable String queryName, 
+			@RequestHeader(value="Authorization", required=true) String bearerToken, 
+			@RequestParam(required = false) String eventType,
 			@RequestParam(required = false) String GE_eventTime, @RequestParam(required = false) String LT_eventTime,
 			@RequestParam(required = false) String GE_recordTime, @RequestParam(required = false) String LT_recordTime,
 			@RequestParam(required = false) String EQ_action, @RequestParam(required = false) String EQ_bizStep,
@@ -207,7 +209,6 @@ public class RESTLikeQueryService {
 			@RequestParam(required = false) Integer maxElementCount,
 
 			@RequestParam(required = false) String format, 
-			@RequestHeader(value="Authorization", required=true) String accessToken, 
 			@RequestParam Map<String, String> params)
 			throws QueryParameterException, QueryTooLargeException, QueryTooComplexException, NoSuchNameException,
 			SecurityException, ValidationException, ImplementationException {
@@ -220,7 +221,7 @@ public class RESTLikeQueryService {
 		}
 		
 		// Check NIMBLE authorization
-		String userPartyID = authorizationSrv.checkToken(accessToken);
+		String userPartyID = authorizationSrv.checkToken(bearerToken);
 		if (userPartyID == null) {
 			return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
 		}

@@ -38,7 +38,7 @@ import com.mongodb.client.MongoCollection;
 
 public class MasterDataWriteConverter {
 
-	public int capture(VocabularyType vocabulary, Integer gcpLength) {
+	public int capture(VocabularyType vocabulary, String userPartyID, Integer gcpLength) {
 
 		MongoCollection<BsonDocument> collection = Configuration.mongoDatabase.getCollection("MasterData",
 				BsonDocument.class);
@@ -166,6 +166,12 @@ public class MasterDataWriteConverter {
 					voc.put("children", bsonIDList);
 				}
 
+				
+				if (userPartyID != null) {
+					voc.put("userPartyID", new BsonString(userPartyID));
+				}
+				
+				
 				if (isExist == false) {
 					collection.insertOne(voc);
 				} else {

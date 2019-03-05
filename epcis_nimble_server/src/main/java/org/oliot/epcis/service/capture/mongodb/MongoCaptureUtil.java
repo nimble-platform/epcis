@@ -106,10 +106,15 @@ public class MongoCaptureUtil {
 
 	
 	/* added for JSONcapture */
-	public void captureJSONProductionProcTemplate(JSONObject productionProcTemp) {
+	public void captureJSONProductionProcTemplate(JSONObject productionProcTemp, String userID) {
 
 		MongoCollection<BsonDocument> collection = Configuration.mongoDatabase.getCollection("ProductionProcessTemplate",BsonDocument.class);
 		BsonDocument dbObject = BsonDocument.parse(productionProcTemp.toString());
+		
+		if (userID != null) {
+			dbObject.put("userPartyID", new BsonString(userID));
+		}
+		
 		
 		String productClass = productionProcTemp.getString("productClass");
 		if(collection.find(Filters.eq("productClass", productClass)).first() != null)
@@ -125,10 +130,14 @@ public class MongoCaptureUtil {
 	}
 	
 	/* added for JSONcapture */
-	public void captureJSONEvent(JSONObject event) {
+	public void captureJSONEvent(JSONObject event, String userID) {
 
 		MongoCollection<BsonDocument> collection = Configuration.mongoDatabase.getCollection("EventData",BsonDocument.class);
 		BsonDocument dbObject = BsonDocument.parse(event.toString());
+		
+		if (userID != null) {
+			dbObject.put("userPartyID", new BsonString(userID));
+		}
 		
 		collection.insertOne(dbObject);
 		log.info(" Event Saved ");
@@ -136,9 +145,9 @@ public class MongoCaptureUtil {
 	/* added for JSONcapture */
 
 
-	public String capture(VocabularyType vocabulary, String userID, Integer gcpLength) {
+	public String capture(VocabularyType vocabulary, String userPartyID, Integer gcpLength) {
 		MasterDataWriteConverter mdConverter = new MasterDataWriteConverter();
-		if (mdConverter.capture(vocabulary, gcpLength) != 0) {
+		if (mdConverter.capture(vocabulary, userPartyID, gcpLength) != 0) {
 			return "[ERROR] Vocabulary Capture Failed";
 		} else {
 			return null;

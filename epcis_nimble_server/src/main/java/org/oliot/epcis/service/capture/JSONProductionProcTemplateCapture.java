@@ -39,11 +39,11 @@ public class JSONProductionProcTemplateCapture {
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
 	public ResponseEntity<?> post(@RequestBody String inputString, 
-			@RequestHeader(value="Authorization", required=true) String accessToken, 
+			@RequestHeader(value="Authorization", required=true) String bearerToken, 
 			@RequestParam(required = false) Integer gcpLength) {
 		
 		// Check NIMBLE authorization
-		String userPartyID = authorizationSrv.checkToken(accessToken);
+		String userPartyID = authorizationSrv.checkToken(bearerToken);
 		if (userPartyID == null) {
 			return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
 		}
@@ -79,7 +79,7 @@ public class JSONProductionProcTemplateCapture {
 		} 
 		
 		MongoCaptureUtil m = new MongoCaptureUtil();
-		m.captureJSONProductionProcTemplate(jsonProductionProc);
+		m.captureJSONProductionProcTemplate(jsonProductionProc, userPartyID);
 		
 		return new ResponseEntity<>("Production Process Template Document : Captured ", HttpStatus.OK);
 

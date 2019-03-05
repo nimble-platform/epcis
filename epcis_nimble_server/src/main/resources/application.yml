@@ -24,7 +24,8 @@ spring:
       #port: 27017 #8118
       #username: <username>
       #ssl-enabled: true
-      uri: ${EPCIS_DB_HOST_URL:mongodb://localhost:27017/} 
+      uri: ${EPCIS_DB_HOST_URL:mongodb://***REMOVED***/?authSource=admin&ssl=true} 
+      #uri: ${EPCIS_DB_HOST_URL:mongodb://localhost:27017/} 
   identity-service:
     url: http://${IDENTITY_SRV_HOST:nimble-staging.salzburgresearch.at}:${IDENTITY_SRV_PORT:80}/identity      
 springfox:

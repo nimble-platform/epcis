@@ -66,12 +66,12 @@ public class EventCapture {
 	 * @return
 	 */
 	public ResponseEntity<?> post(@RequestBody String inputString, 
-			@RequestHeader(value="Authorization", required=true) String accessToken, 
+			@RequestHeader(value="Authorization", required=true) String bearerToken, 
 			@RequestParam(required = false) Integer gcpLength) {
 		JSONObject retMsg = new JSONObject();
 
 		// Check NIMBLE authorization
-		String userPartyID = authorizationSrv.checkToken(accessToken);
+		String userPartyID = authorizationSrv.checkToken(bearerToken);
 		if (userPartyID == null) {
 			return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
 		}
@@ -102,12 +102,18 @@ public class EventCapture {
 		}
 
 		retMsg = captureService.capture(epcisDocument, userPartyID, gcpLength);
-		log.info(" EPCIS Document : Captured ");
+		
 
 		if (retMsg.isNull("error") == true)
+		{
+			log.info(" EPCIS Document : Captured successfully!");
 			return new ResponseEntity<>(retMsg.toString(), HttpStatus.OK);
+		}
 		else
+		{
+			log.info(" EPCIS Document : Capture Failed!");
 			return new ResponseEntity<>(retMsg.toString(), HttpStatus.BAD_REQUEST);
+		}
 	}
 
 }

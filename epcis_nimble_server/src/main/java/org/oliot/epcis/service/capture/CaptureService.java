@@ -59,13 +59,13 @@ public class CaptureService {
 		return new JSONObject(retMsg);
 	}
 
-	public JSONObject capture(EPCISMasterDataDocumentType epcisMasterDataDocument, Integer gcpLength) {
+	public JSONObject capture(EPCISMasterDataDocumentType epcisMasterDataDocument, String userPartyID, Integer gcpLength) {
 
 		HashMap<String, Object> retMsg = new HashMap<String, Object>();
 		try {
 			List<VocabularyType> vocabularyTypeList = epcisMasterDataDocument.getEPCISBody().getVocabularyList()
 					.getVocabulary();
-			retMsg.putAll(captureVocabularies(vocabularyTypeList, gcpLength));
+			retMsg.putAll(captureVocabularies(vocabularyTypeList, userPartyID, gcpLength));
 		} catch (NullPointerException ex) {
 
 		}
@@ -97,7 +97,7 @@ public class CaptureService {
 			
 			if (bsonDocumentList != null && bsonDocumentList.size() != 0)
 			{
-				if(authorizationSrv.hasCapturePermission(userID, bsonDocumentList))
+				if(!authorizationSrv.hasCapturePermission(userID, bsonDocumentList))
 				{
 					retMessage.put("error", "userPartyID has no permission for capturing the given events!" );
 					return retMessage;
@@ -118,14 +118,14 @@ public class CaptureService {
 			// Master Data in the document
 			List<VocabularyType> vocabularyTypeList = epcisDocument.getEPCISHeader().getExtension().getEPCISMasterData()
 					.getVocabularyList().getVocabulary();
-			retMsg = captureVocabularies(vocabularyTypeList, gcpLength);
+			retMsg = captureVocabularies(vocabularyTypeList, userID, gcpLength);
 		} catch (NullPointerException ex) {
 			// No vocabulary in the document
 		}
 		return retMsg;
 	}
 
-	private HashMap<String, Object> captureVocabularies(List<VocabularyType> vocabularyTypeList, Integer gcpLength) {
+	private HashMap<String, Object> captureVocabularies(List<VocabularyType> vocabularyTypeList, String userID, Integer gcpLength) {
 
 		HashMap<String, Object> retMsg = new HashMap<String, Object>();
 
@@ -139,7 +139,7 @@ public class CaptureService {
 				for (int j = 0; j < vetTempList.size(); j++) {
 					vocabulary.getVocabularyElementList().getVocabularyElement().clear();
 					vocabulary.getVocabularyElementList().getVocabularyElement().add(vetTempList.get(j));
-					String message = capture(vocabulary, gcpLength);
+					String message = capture(vocabulary, userID,  gcpLength);
 					if (message != null) {
 						retMsg.put("error", message);
 					} else {
@@ -155,8 +155,8 @@ public class CaptureService {
 		return retMsg;
 	}
 
-	private String capture(VocabularyType vocabulary, Integer gcpLength) {
+	private String capture(VocabularyType vocabulary, String userPartyID, Integer gcpLength) {
 		MongoCaptureUtil m = new MongoCaptureUtil();
-		return m.capture(vocabulary, null, gcpLength);
+		return m.capture(vocabulary, userPartyID, gcpLength);
 	}
 }
