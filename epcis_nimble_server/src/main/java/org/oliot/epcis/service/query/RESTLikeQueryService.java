@@ -173,7 +173,8 @@ public class RESTLikeQueryService {
 			@RequestHeader(value="Authorization", required=true) String bearerToken, 
 			@RequestParam(required = false) String eventType,
 			@RequestParam(required = false) String GE_eventTime, @RequestParam(required = false) String LT_eventTime,
-			@RequestParam(required = false) String GE_recordTime, @RequestParam(required = false) String LT_recordTime,
+            @RequestParam(required = false) String GE_masterTime, @RequestParam(required = false) String LE_masterTime,
+            @RequestParam(required = false) String GE_recordTime, @RequestParam(required = false) String LT_recordTime,
 			@RequestParam(required = false) String EQ_action, @RequestParam(required = false) String EQ_bizStep,
 			@RequestParam(required = false) String EQ_disposition, @RequestParam(required = false) String EQ_readPoint,
 			@RequestParam(required = false) String WD_readPoint, @RequestParam(required = false) String EQ_bizLocation,
@@ -208,7 +209,8 @@ public class RESTLikeQueryService {
 			@RequestParam(required = false) String WD_name, @RequestParam(required = false) String HASATTR,
 			@RequestParam(required = false) Integer maxElementCount,
 
-			@RequestParam(required = false) String format, 
+			@RequestParam(required = false) String format,
+            @RequestParam(required = false) String masterDataFormat,
 			@RequestParam Map<String, String> params)
 			throws QueryParameterException, QueryTooLargeException, QueryTooComplexException, NoSuchNameException,
 			SecurityException, ValidationException, ImplementationException {
@@ -227,14 +229,15 @@ public class RESTLikeQueryService {
 		}
 		
 		
-		PollParameters pollParams = new PollParameters(queryName, eventType, GE_eventTime, LT_eventTime, GE_recordTime,
-				LT_recordTime, EQ_action, EQ_bizStep, EQ_disposition, EQ_readPoint, WD_readPoint, EQ_bizLocation,
-				WD_bizLocation, EQ_transformationID, MATCH_epc, MATCH_parentID, MATCH_inputEPC, MATCH_outputEPC,
-				MATCH_anyEPC, MATCH_epcClass, MATCH_inputEPCClass, MATCH_outputEPCClass, MATCH_anyEPCClass, EQ_quantity,
-				GT_quantity, GE_quantity, LT_quantity, LE_quantity, EQ_eventID, EXISTS_errorDeclaration,
-				GE_errorDeclarationTime, LT_errorDeclarationTime, EQ_errorReason, EQ_correctiveEventID, orderBy,
-				orderDirection, eventCountLimit, maxEventCount, vocabularyName, includeAttributes, includeChildren,
-				attributeNames, EQ_name, WD_name, HASATTR, maxElementCount, format, params);
+		PollParameters pollParams = new PollParameters(queryName, eventType, GE_eventTime, LT_eventTime, GE_masterTime,
+                LE_masterTime, GE_recordTime, LT_recordTime, EQ_action, EQ_bizStep, EQ_disposition, EQ_readPoint,
+                WD_readPoint, EQ_bizLocation, WD_bizLocation, EQ_transformationID, MATCH_epc, MATCH_parentID,
+                MATCH_inputEPC, MATCH_outputEPC, MATCH_anyEPC, MATCH_epcClass, MATCH_inputEPCClass, MATCH_outputEPCClass,
+                MATCH_anyEPCClass, EQ_quantity, GT_quantity, GE_quantity, LT_quantity, LE_quantity, EQ_eventID,
+                EXISTS_errorDeclaration, GE_errorDeclarationTime, LT_errorDeclarationTime, EQ_errorReason,
+                EQ_correctiveEventID, orderBy, orderDirection, eventCountLimit, maxEventCount, vocabularyName,
+                includeAttributes, includeChildren, attributeNames, EQ_name, WD_name, HASATTR, maxElementCount, format,
+                masterDataFormat, params);
 
 		String result = mongoQueryService.poll(pollParams, userPartyID);
 		return new ResponseEntity<>(result, responseHeaders, HttpStatus.OK);

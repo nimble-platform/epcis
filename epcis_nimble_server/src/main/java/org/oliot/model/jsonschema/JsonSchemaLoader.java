@@ -47,6 +47,7 @@ public class JsonSchemaLoader {
 
 	JSONObject eventSchema;
 	JSONObject masterDataSchema;
+	JSONObject objectMasterSchema;
 	JSONObject objectEventSchema;
 	JSONObject aggregationEventSchema;
 	JSONObject transformationEventSchema;
@@ -57,8 +58,9 @@ public class JsonSchemaLoader {
 		try {
 			log.info(" JsonSchemaLoader Started.... ");
 
-			eventSchema = new JSONObject(getFileWithUtil("jsonSchema/GeneralEventSchema.json"));				
-			masterDataSchema = new JSONObject(getFileWithUtil("jsonSchema/GeneralMDSchema.json"));	
+			eventSchema = new JSONObject(getFileWithUtil("jsonSchema/GeneralEventSchema.json"));
+			masterDataSchema = new JSONObject(getFileWithUtil("jsonSchema/GeneralMasterSchema.json"));
+			objectMasterSchema = new JSONObject(getFileWithUtil("jsonSchema/ObjectMasterSchema.json"));
 			objectEventSchema = new JSONObject(getFileWithUtil("jsonSchema/ObjectEventSchema.json"));	
 			aggregationEventSchema = new JSONObject(getFileWithUtil("jsonSchema/AggregationEventSchema.json"));	
 			transformationEventSchema = new JSONObject(getFileWithUtil("jsonSchema/TransformationEventSchema.json"));	
@@ -108,6 +110,14 @@ public class JsonSchemaLoader {
 
 	public void setMasterDataSchema(JSONObject masterDataSchema) {
 		this.masterDataSchema = masterDataSchema;
+	}
+
+	public JSONObject getObjectMasterSchema() {
+		return objectMasterSchema;
+	}
+
+	public void setObjectMasterSchema(JSONObject objectMasterSchema) {
+		this.objectMasterSchema = objectMasterSchema;
 	}
 
 	public JSONObject getObjectEventSchema() {

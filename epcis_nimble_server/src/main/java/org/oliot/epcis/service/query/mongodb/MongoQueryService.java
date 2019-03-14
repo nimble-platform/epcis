@@ -13,14 +13,8 @@ import static org.oliot.epcis.service.query.mongodb.MongoQueryUtil.getWDParamBso
 import java.io.StringWriter;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.GregorianCalendar;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -28,6 +22,7 @@ import javax.xml.bind.JAXB;
 import javax.xml.bind.JAXBElement;
 import javax.xml.namespace.QName;
 
+import com.mongodb.client.model.Sorts;
 import org.bson.BsonArray;
 import org.bson.BsonBoolean;
 import org.bson.BsonDateTime;
@@ -409,9 +404,9 @@ public class MongoQueryService {
 		EPCISQueryDocumentType epcisQueryDocumentType = null;
 		JSONArray retArray = new JSONArray();
 
-		if (p.getFormat() == null || p.getFormat().equals("XML")) {
+        if (p.getMasterDataFormat() == null || p.getMasterDataFormat().equals("XML")) {
 			epcisQueryDocumentType = makeBaseResultDocument(p.getQueryName());
-		} else if (p.getFormat().equals("JSON")) {
+        } else if (p.getMasterDataFormat().equals("JSON")) {
 			// Do Nothing
 		} else {
 			throw new QueryParameterException();
@@ -440,6 +435,9 @@ public class MongoQueryService {
 			cursor = collection.find();
 		}
 
+        // Sort and Limit
+        cursor = makeMasterDataSortedLimitedCursor(cursor, p.getMaxElementCount());
+
 		// Cursor needed to ordered
 		List<VocabularyType> vList = new ArrayList<>();
 
@@ -447,7 +445,7 @@ public class MongoQueryService {
 		while (slCursor.hasNext()) {
 			BsonDocument dbObject = slCursor.next();
 
-			if (p.getFormat() == null || p.getFormat().equals("XML")) {
+            if (p.getMasterDataFormat() == null || p.getMasterDataFormat().equals("XML")) {
 				MasterDataReadConverter con = new MasterDataReadConverter();
 				VocabularyType vt = con.convert(dbObject);
 
@@ -514,7 +512,7 @@ public class MongoQueryService {
 
 		}
 
-		if (p.getFormat() == null || p.getFormat().equals("XML")) {
+        if (p.getMasterDataFormat() == null || p.getMasterDataFormat().equals("XML")) {
 			QueryResultsBody qbt = epcisQueryDocumentType.getEPCISBody().getQueryResults().getResultsBody();
 
 			VocabularyListType vlt = new VocabularyListType();
@@ -544,7 +542,7 @@ public class MongoQueryService {
 
 			}
 		}
-		if (p.getFormat() == null || p.getFormat().equals("XML")) {
+        if (p.getMasterDataFormat() == null || p.getMasterDataFormat().equals("XML")) {
 			StringWriter sw = new StringWriter();
 			JAXB.marshal(epcisQueryDocumentType, sw);
 			return sw.toString();
@@ -658,6 +656,17 @@ public class MongoQueryService {
 		// Never Happened
 		return null;
 	}
+
+    static BsonDateTime getDateTimeMillis(String standardDateString ) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date date = null;
+        try {
+            date = sdf.parse(standardDateString);
+        } catch (ParseException e) {
+            log.error(e.toString());
+        }
+        return new BsonDateTime(date.getTime());
+    }
 
 	boolean isExtraParameter(String paramName) {
 
@@ -872,6 +881,20 @@ public class MongoQueryService {
 		}
 		return null;
 	}
+
+    private FindIterable<BsonDocument> makeMasterDataSortedLimitedCursor(FindIterable<BsonDocument> cursor, Integer getMaxElementCount) {
+
+        // Update Query with ORDER and LIMIT
+        if (getMaxElementCount != null) {
+            try {
+                cursor = cursor.sort(Sorts.descending("_id")).limit(getMaxElementCount);
+            } catch (NumberFormatException nfe) {
+                log.error(nfe.toString());
+            }
+        }
+
+        return cursor;
+    }
 
 	private FindIterable<BsonDocument> makeProjectSortedLimitedCursor(FindIterable<BsonDocument> cursor,
 			Map<String, String> extParams, String orderBy, String orderDirection, Integer eventCountLimit) {
@@ -2408,6 +2431,21 @@ public class MongoQueryService {
 				}
 			}
 		}
+
+        if (p.getGE_masterTime() != null) {
+            BsonDateTime geBsonDateTime = getDateTimeMillis(p.getGE_masterTime());
+            BsonDocument query = new BsonDocument();
+            query.put("lastUpdated", new BsonDocument("$gte", geBsonDateTime));
+            queryList.add(query);
+        }
+
+        if (p.getLE_masterTime() != null) {
+            BsonDateTime geBsonDateTime = getDateTimeMillis(p.getLE_masterTime());
+            BsonDocument query = new BsonDocument();
+            query.put("lastUpdated", new BsonDocument("$lte", geBsonDateTime));
+            queryList.add(query);
+        }
+
 		return queryList;
 	}
 

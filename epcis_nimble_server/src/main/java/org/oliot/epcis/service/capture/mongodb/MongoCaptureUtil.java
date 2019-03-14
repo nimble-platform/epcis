@@ -2,9 +2,11 @@ package org.oliot.epcis.service.capture.mongodb;
 
 
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
+import org.bson.BsonDateTime;
 import org.bson.BsonDocument;
 import org.bson.BsonString;
 import org.json.JSONObject;
@@ -143,6 +145,18 @@ public class MongoCaptureUtil {
 		log.info(" Event Saved ");
 	}
 	/* added for JSONcapture */
+
+	/* added for Master JSONcapture */
+	public void captureJSONMaster(JSONObject event) {
+		MongoCollection<BsonDocument> collection = Configuration.mongoDatabase.getCollection("MasterData",BsonDocument.class);
+		BsonDocument dbObject = BsonDocument.parse(event.toString());
+		Date date = new Date();
+//	      This method returns the time in millis
+		dbObject.append("lastUpdated",new BsonDateTime(date.getTime()));
+		collection.insertOne(dbObject);
+		log.info(" Master Saved ");
+	}
+	/* added for Master JSONcapture */
 
 
 	public String capture(VocabularyType vocabulary, String userPartyID, Integer gcpLength) {

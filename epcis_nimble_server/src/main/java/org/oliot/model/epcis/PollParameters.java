@@ -13,12 +13,18 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+/**
+* Modifications copyright (C) 2019, hos, BIBA
+*/
+
 public class PollParameters {
 
 	private String queryName;
 	private String eventType;
 	private String GE_eventTime;
 	private String LT_eventTime;
+	private String GE_masterTime;
+	private String LE_masterTime;
 	private String GE_recordTime;
 	private String LT_recordTime;
 	private String EQ_action;
@@ -63,6 +69,7 @@ public class PollParameters {
 	private String HASATTR;
 	private Integer maxElementCount;
 	private String format;
+	private String masterDataFormat;
 	private Map<String, String> params;
 
 	public static BsonDocument asBsonDocument(PollParameters p) {
@@ -79,6 +86,14 @@ public class PollParameters {
 		if (p.getLT_eventTime() != null) {
 			bson.put("LT_eventTime", new BsonString(p.getLT_eventTime()));
 		}
+
+		if (p.getGE_masterTime() != null) {
+			bson.put("GE_masterTime", new BsonString(p.getGE_masterTime()));
+		}
+		if (p.getLE_masterTime() != null) {
+			bson.put("LE_masterTime", new BsonString(p.getLE_masterTime()));
+		}
+
 		if (p.getGE_recordTime() != null) {
 			bson.put("GE_recordTime", new BsonString(p.getGE_recordTime()));
 		}
@@ -794,9 +809,9 @@ public class PollParameters {
 		}
 	}
 
-	public PollParameters(String queryName, String eventType, String GE_eventTime, String LT_eventTime,
-			String GE_recordTime, String LT_recordTime, String EQ_action, String EQ_bizStep, String EQ_disposition,
-			String EQ_readPoint, String WD_readPoint, String EQ_bizLocation, String WD_bizLocation,
+	public PollParameters(String queryName, String eventType, String GE_eventTime, String LT_eventTime, String GE_masterTime,
+		  	String LE_masterTime, String GE_recordTime, String LT_recordTime, String EQ_action, String EQ_bizStep,
+		  	String EQ_disposition, String EQ_readPoint, String WD_readPoint, String EQ_bizLocation, String WD_bizLocation,
 			String EQ_transformationID, String MATCH_epc, String MATCH_parentID, String MATCH_inputEPC,
 			String MATCH_outputEPC, String MATCH_anyEPC, String MATCH_epcClass, String MATCH_inputEPCClass,
 			String MATCH_outputEPCClass, String MATCH_anyEPCClass, Integer EQ_quantity, Integer GT_quantity,
@@ -805,11 +820,13 @@ public class PollParameters {
 			String EQ_errorReason, String EQ_correctiveEventID, String orderBy, String orderDirection,
 			Integer eventCountLimit, Integer maxEventCount, String vocabularyName, Boolean includeAttributes,
 			Boolean includeChildren, String attributeNames, String EQ_name, String WD_name, String HASATTR,
-			Integer maxElementCount, String format, Map<String, String> params) {
+			Integer maxElementCount, String format, String masterDataFormat, Map<String, String> params) {
 		this.queryName = queryName;
 		this.eventType = eventType;
 		this.GE_eventTime = GE_eventTime;
 		this.LT_eventTime = LT_eventTime;
+		this.GE_masterTime = GE_masterTime;
+		this.LE_masterTime = LE_masterTime;
 		this.GE_recordTime = GE_recordTime;
 		this.LT_recordTime = LT_recordTime;
 		this.EQ_action = EQ_action;
@@ -853,6 +870,7 @@ public class PollParameters {
 		this.HASATTR = HASATTR;
 		this.maxElementCount = maxElementCount;
 		this.format = format;
+		this.masterDataFormat = masterDataFormat;
 		this.params = params;
 	}
 
@@ -886,6 +904,22 @@ public class PollParameters {
 
 	public void setLT_eventTime(String lT_eventTime) {
 		LT_eventTime = lT_eventTime;
+	}
+
+	public String getGE_masterTime() {
+		return GE_masterTime;
+	}
+
+	public void setGE_masterTime(String gE_masterTime) {
+		GE_masterTime = gE_masterTime;
+	}
+
+	public String getLE_masterTime() {
+		return LE_masterTime;
+	}
+
+	public void setLE_masterTime(String lE_masterTime) {
+		LE_masterTime = lE_masterTime;
 	}
 
 	public String getGE_recordTime() {
@@ -1230,6 +1264,14 @@ public class PollParameters {
 
 	public void setFormat(String format) {
 		this.format = format;
+	}
+
+	public String getMasterDataFormat() {
+		return masterDataFormat;
+	}
+
+	public void setMasterDataFormat(String format) {
+		this.masterDataFormat = format;
 	}
 
 	public Map<String, String> getParams() {
