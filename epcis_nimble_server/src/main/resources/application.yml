@@ -5,6 +5,7 @@ build:
 server:
   max-http-header-size: 1048576
   servlet-path: /Service/*
+  port: 8080
 #  tomcat:
 #    max-connections: 3000
 #    max-http-post-size: 1048576
@@ -16,15 +17,9 @@ spring:
       WRITE_DATES_AS_TIMESTAMPS: false
   data:
     mongodb:
-      #authentication-database: admin
-      database:  ${EPCIS_DB_NAME:epcis} 
-      #host: ${EPCIS_DB_HOST:127.0.0.1}  #docker.xxx.xxx.uni-bremen.de
-      #password: <password>
-      ##
-      #port: 27017 #8118
-      #username: <username>
-      #ssl-enabled: true
-      uri: ${EPCIS_DB_HOST_URL:mongodb://localhost:27017/} 
+      database: ${EPCIS_DB_NAME:epcis} 
+      ssl: ${EPCIS_DB_SSL:false}
+      uri: ${EPCIS_DB_URL:mongodb://localhost:27017/} 
   identity-service:
     url: http://${IDENTITY_SRV_HOST:nimble-staging.salzburgresearch.at}:${IDENTITY_SRV_PORT:80}/identity      
 springfox:
