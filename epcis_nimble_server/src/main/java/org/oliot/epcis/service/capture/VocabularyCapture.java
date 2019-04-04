@@ -55,7 +55,7 @@ public class VocabularyCapture {
 	AuthorizationSrv authorizationSrv;
 	@Autowired
 	CaptureService captureService;
-	
+
 
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
