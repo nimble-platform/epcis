@@ -28,7 +28,7 @@ import org.springframework.web.client.RestTemplate;
 //@EnableCircuitBreaker
 //@EnableEurekaClient
 //@EnableFeignClients
-@RestController
+//@BaseRestController
 //@EnableSwagger2
 @SpringBootApplication
 @EnableAutoConfiguration(exclude={MongoAutoConfiguration.class})

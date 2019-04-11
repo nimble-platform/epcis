@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import eu.nimble.service.epcis.controller.BaseRestController;
 import org.json.JSONArray;
 import org.oliot.epcis.service.query.mongodb.MongoQueryService;
 import org.oliot.model.epcis.ImplementationException;
@@ -53,7 +54,7 @@ import eu.nimble.service.epcis.services.AuthorizationSrv;
 
 @CrossOrigin()
 @RestController
-public class RESTLikeQueryService {
+public class RESTLikeQueryService extends BaseRestController {
 
 	@Autowired
 	AuthorizationSrv authorizationSrv;

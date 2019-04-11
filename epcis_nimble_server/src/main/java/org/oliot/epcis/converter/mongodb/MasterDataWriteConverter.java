@@ -1,5 +1,6 @@
 package org.oliot.epcis.converter.mongodb;
 
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -152,9 +153,15 @@ public class MasterDataWriteConverter {
 							}
 						}
 					}
-					attrObj.put("lastUpdated", new BsonDateTime(System.currentTimeMillis()));
+//					attrObj.put("lastUpdated", new BsonDateTime(System.currentTimeMillis()));
 					voc.put("attributes", attrObj);
 				}
+
+				// track lastUpdated time
+				// This method returns the time in millis
+				Date date = new Date();
+				long timeMilli = date.getTime();
+				voc.put("lastUpdated", new BsonDateTime(timeMilli));
 
 				// If children found, overwrite previous one(s)
 				if (vocabularyElement.getChildren() != null) {
@@ -221,9 +228,13 @@ public class MasterDataWriteConverter {
 				BsonValue value = (BsonValue) map2Save.get(key);
 				attrObj.put(key, value);
 			}
-
-			attrObj.put("lastUpdated", new BsonDateTime(System.currentTimeMillis()));
 			voc.put("attributes", attrObj);
+
+			// track lastUpdated time
+			// This method returns the time in millis
+			Date date = new Date();
+			long timeMilli = date.getTime();
+			voc.put("lastUpdated", new BsonDateTime(timeMilli));
 
 			if (collection.findOneAndReplace(new BsonDocument("id", new BsonString(id)), voc) == null) {
 				collection.insertOne(voc);
