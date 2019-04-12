@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.nimble.service.epcis.services.AuthorizationSrv;
+import io.swagger.annotations.Api;
 
 /**
  * Copyright (C) 2014-2017 Jaewook Byun
@@ -43,6 +44,8 @@ import eu.nimble.service.epcis.services.AuthorizationSrv;
 * Modifications copyright (C) 2019 Quan Deng
 */
 
+@Api(tags = {"EPCIS XML Event Capture"})
+//@Api
 @CrossOrigin()
 @RestController
 @RequestMapping("/EventCapture")
@@ -55,9 +58,6 @@ public class EventCapture {
 	@Autowired
 	CaptureService 	captureService;
 
-	
-	@RequestMapping(method = RequestMethod.POST)
-	@ResponseBody
 	/**
 	 * 
 	 * @param inputString
@@ -65,6 +65,8 @@ public class EventCapture {
 	 * @param gcpLength Global Company Prefix(GCP) length. 
 	 * @return
 	 */
+	@RequestMapping(method = RequestMethod.POST)
+	@ResponseBody
 	public ResponseEntity<?> post(@RequestBody String inputString, 
 			@RequestHeader(value="Authorization", required=true) String bearerToken, 
 			@RequestParam(required = false) Integer gcpLength) {

@@ -29,6 +29,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.nimble.service.epcis.services.AuthorizationSrv;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import springfox.documentation.annotations.ApiIgnore;
 
 /**
  * Copyright (C) 2014-2016 Jaewook Byun
@@ -51,8 +57,9 @@ import eu.nimble.service.epcis.services.AuthorizationSrv;
 */
 
 
-@CrossOrigin()
+@Api(tags = {"EPCIS Query Service"})
 @RestController
+@CrossOrigin()
 public class RESTLikeQueryService {
 
 	@Autowired
@@ -165,8 +172,12 @@ public class RESTLikeQueryService {
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.add("Content-Type", "application/json; charset=utf-8");
         return new ResponseEntity<>(result, responseHeaders, HttpStatus.OK);
-    }     
-
+    }   
+	
+	//TODO: Refactory this into a more understandable REST API. 
+	// For example, a model for query params and then query with the param model; or a json file with all query params.
+	// Swagger has problem to document the API with too much params
+	@ApiIgnore
 	@RequestMapping(value = "/Poll/{queryName}", method = RequestMethod.GET)
 	@ResponseBody
 	public ResponseEntity<?> poll(@PathVariable String queryName, 

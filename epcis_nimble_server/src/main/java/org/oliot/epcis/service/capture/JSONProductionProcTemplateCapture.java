@@ -20,11 +20,13 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.nimble.service.epcis.services.AuthorizationSrv;
+import io.swagger.annotations.Api;
 
 /**
 * Created by Quan Deng, 2019
 */
 
+@Api(tags = {"Production Process JSON Template Capture"})
 @CrossOrigin()
 @RestController
 @RequestMapping("/JSONProductionProcTemplateCapture")

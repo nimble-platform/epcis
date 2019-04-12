@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.nimble.service.epcis.services.AuthorizationSrv;
+import io.swagger.annotations.Api;
 
 /**
  * Copyright (C) 2014-2017 Jaewook Byun
@@ -44,6 +45,7 @@ import eu.nimble.service.epcis.services.AuthorizationSrv;
 */
 
 
+@Api(tags = {"EPCIS XML Master Data Capture"})
 @CrossOrigin()
 @RestController
 @RequestMapping("/VocabularyCapture")

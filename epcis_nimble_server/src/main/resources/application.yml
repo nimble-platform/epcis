@@ -31,6 +31,8 @@ springfox:
     swagger:
       v2:
         path: /api-docs
+nimble:
+  platformHost: ${EPCIS_SERVICE_URL:http://localhost:8080}
 epcis:
   capture:
     verification: true   

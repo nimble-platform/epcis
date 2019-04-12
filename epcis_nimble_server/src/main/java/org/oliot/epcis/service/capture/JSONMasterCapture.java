@@ -1,6 +1,8 @@
 package org.oliot.epcis.service.capture;
 
 import eu.nimble.service.epcis.services.AuthorizationSrv;
+import io.swagger.annotations.Api;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 * Created by hos, BIBA, 2019
 */
 
+@Api(tags = {"EPCIS JSON Master Data Capture"})
 @CrossOrigin()
 @RestController
 @RequestMapping("/JSONMasterCapture")

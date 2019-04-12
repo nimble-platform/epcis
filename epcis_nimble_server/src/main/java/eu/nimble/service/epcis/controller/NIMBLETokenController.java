@@ -10,18 +10,23 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
+import io.swagger.annotations.Api;
+
 
 /**
 * Created by Quan Deng, 2019
 */
 
+@Api(tags = {"NIMBLE Token Management"})
 @RestController
+@CrossOrigin()
 public class NIMBLETokenController {
     private static Logger log = LoggerFactory.getLogger(NIMBLETokenController.class);
 
