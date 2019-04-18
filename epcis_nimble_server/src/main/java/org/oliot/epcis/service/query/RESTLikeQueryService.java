@@ -347,7 +347,8 @@ public class RESTLikeQueryService {
 			@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = true) String bearerToken, 
 			@ApiParam(value = "Query Params according to the EPCIS Standard 1.2. "
 					+ "A QueryParams instance is simply a set of name/value pairs, where the names correspond to parameter names defined by the query, "
-					+ "and the values are the specific values to be used for that invocation of (poll) or subscription to (subscribe) the query. Example value: {\"format\": \"JSON\"}", required = true) 
+					+ "and the values are the specific values to be used for that invocation of (poll) or subscription to (subscribe) the query. "
+					+ "Example value for event query: {\"format\": \"JSON\", \"match_epc\":\"urn:epc:id:sgtin:0614141.107346.2017\"} ; Example value for master data query: {\"format\": \"JSON\", \"eq_name\":\"202\"}", required = true) 
 	@Valid @RequestBody PollParameters parmas) 
 					throws QueryParameterException, QueryTooLargeException, QueryTooComplexException, NoSuchNameException,
 			SecurityException, ValidationException, ImplementationException {

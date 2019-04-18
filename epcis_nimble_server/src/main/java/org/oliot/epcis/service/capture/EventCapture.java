@@ -74,16 +74,14 @@ public class EventCapture {
 	@ApiOperation(value = "", notes = "Capture an EPCIS Event in XML. An example EPCIS Event is: <br><textarea disabled style=\"width:98%\" class=\"body-textarea\">" 
 			+ " \r\n" + 
 			"<epcis:EPCISDocument xmlns:epcis=\"urn:epcglobal:epcis:xsd:1\"\r\n" + 
-			"	xmlns:example=\"http://ns.example.com/epcis\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\r\n" + 
-			"	xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" creationDate=\"2005-07-11T11:30:47.0Z\"\r\n" + 
-			"	schemaVersion=\"1.2\">\r\n" + 
+			"	creationDate=\"2005-07-11T11:30:47.0Z\" schemaVersion=\"1.2\">\r\n" + 
 			"	<EPCISBody>\r\n" + 
 			"		<EventList>\r\n" + 
 			"			<ObjectEvent>\r\n" + 
 			"				<eventTime>2018-04-03T20:33:31.116-06:00</eventTime>\r\n" + 
 			"				<eventTimeZoneOffset>-06:00</eventTimeZoneOffset>\r\n" + 
 			"				<epcList>\r\n" + 
-			"					<epc>urn:epc:id:sgtin:0614141.lindback.2017</epc>\r\n" + 
+			"					<epc>urn:epc:id:sgtin:0614141.lindback.20173</epc>\r\n" + 
 			"				</epcList>\r\n" + 
 			"				<action>OBSERVE</action>\r\n" + 
 			"				<bizStep>urn:epcglobal:cbv:bizstep:other</bizStep>\r\n" + 

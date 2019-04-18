@@ -394,10 +394,13 @@ public class MongoQueryService {
 
 		// Required Field Check
 		if (p.getIncludeAttributes() == null || p.getIncludeChildren() == null) {
-			throw new QueryParameterException();
-			// return makeErrorResult("SimpleMasterDataQuery's Required Field:
-			// includeAttributes, includeChildren",
-			// QueryTooLargeException.class);
+			// Set default as True, rather than throw exceptions
+			p.setIncludeAttributes(Boolean.TRUE);
+			p.setIncludeChildren(Boolean.TRUE);
+//			throw new QueryParameterException();
+//			 return makeErrorResult("SimpleMasterDataQuery's Required Field:
+//			 includeAttributes, includeChildren",
+//			 QueryTooLargeException.class);
 		}
 
 		// Make Base Result Document

@@ -65,7 +65,8 @@ public class VocabularyCapture {
 	
 
 	@ApiOperation(value = "", notes = "Capture an EPCIS Master Data in XML. An example EPCIS Master Data is: <br><textarea disabled style=\"width:98%\" class=\"body-textarea\">" + 
-			" <epcismd:EPCISMasterDataDocument\r\n" + 
+			" <!DOCTYPE EPCISDocument>\r\n" + 
+			"<epcismd:EPCISMasterDataDocument\r\n" + 
 			"	creationDate=\"2015-04-09T12:00:00\" schemaVersion=\"0.0\" xmlns:epcglobal=\"epcglobal.oliot.org\"\r\n" + 
 			"	xmlns:epcis=\"epcis.oliot.org\" xmlns:epcismd=\"masterdata.epcis.oliot.org\">\r\n" + 
 			"	<EPCISBody>\r\n" + 
@@ -73,10 +74,10 @@ public class VocabularyCapture {
 			"			<Vocabulary type=\"urn:epcglobal:epcis:vtype:ReadPoint\">\r\n" + 
 			"				<VocabularyElementList>\r\n" + 
 			"					<!-- Section 10.3 - Location Master Data Names -->\r\n" + 
-			"					<VocabularyElement id=\"urn:epc:id:sgln:readPoint.lindbacks.0\">\r\n" + 
+			"					<VocabularyElement id=\"urn:epc:id:sgln:readPoint.PodComp.0\">\r\n" + 
 			"						<attribute id=\"urn:epcglobal:cbv:mda#name\">PodComp factory</attribute>\r\n" + 
 			"						<attribute id=\"urn:epcglobal:cbv:mda:site\">PodComp factory</attribute>\r\n" + 
-			"					</VocabularyElement>													\r\n" + 
+			"					</VocabularyElement>\r\n" + 
 			"				</VocabularyElementList>\r\n" + 
 			"			</Vocabulary>\r\n" + 
 			"		</VocabularyList>\r\n" + 
