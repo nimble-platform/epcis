@@ -1,8 +1,11 @@
 package org.oliot.epcis.service.capture;
 
+import javax.validation.Valid;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.oliot.epcis.configuration.Configuration;
+import org.oliot.epcis.converter.mongodb.model.ProductProcessTemplate;
 import org.oliot.epcis.service.capture.mongodb.MongoCaptureUtil;
 import org.oliot.model.jsonschema.JsonSchemaLoader;
 import org.slf4j.Logger;
@@ -19,8 +22,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.google.gson.Gson;
+
 import eu.nimble.service.epcis.services.AuthorizationSrv;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 
 /**
 * Created by Quan Deng, 2019
@@ -38,11 +48,14 @@ public class JSONProductionProcTemplateCapture {
 	AuthorizationSrv authorizationSrv;
 
 
+	@ApiOperation(value = "", notes = "Capture an production process template, which consists of a list of production process steps.", response = String.class )
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "success"),
+			@ApiResponse(code = 400, message = "Json Document is not valid?"),
+			@ApiResponse(code = 401, message = "Unauthorized. Are the headers correct?"), })
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<?> post(@RequestBody String inputString, 
-			@RequestHeader(value="Authorization", required=true) String bearerToken, 
-			@RequestParam(required = false) Integer gcpLength) {
+	public ResponseEntity<?> post(@ApiParam(value = "ProductProcessTemplate object", required = true)@Valid @RequestBody ProductProcessTemplate productProcessTemplate, 
+			@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = true) String bearerToken) {
 		
 		// Check NIMBLE authorization
 		String userPartyID = authorizationSrv.checkToken(bearerToken);
@@ -50,35 +63,13 @@ public class JSONProductionProcTemplateCapture {
 			return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
 		}
 		
-		//TODO: Permission check for each event on the list. Return error, in case no permission on some events.
-		//TODO: Save userPartyID into Event i.e. MongoDB. So that it is possible to know from whom the event is added, for the purpose of audit etc. 
+		//TODO: Permission check. Return error, in case no permission.
 
 		log.info(" Production Process Template Json Document Capture Started.... ");
 
-		JSONObject jsonProductionProc = new JSONObject(inputString);
-		
-		if (Configuration.isCaptureVerfificationOn == true) {
-
-			// JSONParser parser = new JSONParser();
-			JsonSchemaLoader schemaLoader = new JsonSchemaLoader();
-
-			try {
-				JSONObject jsonProductionProcSchema = schemaLoader.getProductionProcTemplateSchema();
-
-				if (!CaptureUtil.validate(jsonProductionProc, jsonProductionProcSchema)) {
-					log.info("Json Document is invalid" + " about general_validcheck");
-
-					return new ResponseEntity<>("Error: Json Document is not valid" + "general_validcheck",
-							HttpStatus.BAD_REQUEST);
-
-				}
-
-			} catch (JSONException e) {
-				log.info(" Json Document is not valid " + "second_validcheck");
-			} catch (Exception e) {
-				log.error(e.toString());
-			}
-		} 
+		Gson gson = new Gson();
+	    String productProcessTemplateJson = gson.toJson(productProcessTemplate);
+		JSONObject jsonProductionProc = new JSONObject(productProcessTemplateJson);
 		
 		MongoCaptureUtil m = new MongoCaptureUtil();
 		m.captureJSONProductionProcTemplate(jsonProductionProc, userPartyID);

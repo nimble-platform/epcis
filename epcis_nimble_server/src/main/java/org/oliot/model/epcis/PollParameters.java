@@ -9,14 +9,23 @@ import org.bson.BsonBoolean;
 import org.bson.BsonDocument;
 import org.bson.BsonInt32;
 import org.bson.BsonString;
+import org.hibernate.validator.constraints.NotBlank;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
 * Modifications copyright (C) 2019, hos, BIBA
 */
 
+@ApiModel(description = "All details about the PollParameters. ")
+/**
+ *  According to the EPCIS Standard 1.2: A QueryParams instance is simply a set of name/value pairs, where the names correspond to parameter names defined by the
+ *  query, and the values are the specific values to be used for that invocation of (poll) or subscription to (subscribe) the query. 
+ */
 public class PollParameters {
 
 	private String queryName;
@@ -68,8 +77,9 @@ public class PollParameters {
 	private String WD_name;
 	private String HASATTR;
 	private Integer maxElementCount;
+	@ApiModelProperty(notes = "Format of experted result. Either JSON or XML",  example = "JSON", required = true)	
+	@NotBlank
 	private String format;
-	private String masterDataFormat;
 	private Map<String, String> params;
 
 	public static BsonDocument asBsonDocument(PollParameters p) {
@@ -237,6 +247,8 @@ public class PollParameters {
 		return bson;
 	}
 
+	public PollParameters() {}
+		
 	public PollParameters(BsonDocument doc) {
 		if (doc.containsKey("queryName"))
 			this.queryName = doc.getString("queryName").getValue();
@@ -820,7 +832,7 @@ public class PollParameters {
 			String EQ_errorReason, String EQ_correctiveEventID, String orderBy, String orderDirection,
 			Integer eventCountLimit, Integer maxEventCount, String vocabularyName, Boolean includeAttributes,
 			Boolean includeChildren, String attributeNames, String EQ_name, String WD_name, String HASATTR,
-			Integer maxElementCount, String format, String masterDataFormat, Map<String, String> params) {
+			Integer maxElementCount, String format, Map<String, String> params) {
 		this.queryName = queryName;
 		this.eventType = eventType;
 		this.GE_eventTime = GE_eventTime;
@@ -870,7 +882,6 @@ public class PollParameters {
 		this.HASATTR = HASATTR;
 		this.maxElementCount = maxElementCount;
 		this.format = format;
-		this.masterDataFormat = masterDataFormat;
 		this.params = params;
 	}
 
@@ -1264,14 +1275,6 @@ public class PollParameters {
 
 	public void setFormat(String format) {
 		this.format = format;
-	}
-
-	public String getMasterDataFormat() {
-		return masterDataFormat;
-	}
-
-	public void setMasterDataFormat(String format) {
-		this.masterDataFormat = format;
 	}
 
 	public Map<String, String> getParams() {

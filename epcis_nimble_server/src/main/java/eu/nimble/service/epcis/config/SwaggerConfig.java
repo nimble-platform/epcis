@@ -37,6 +37,7 @@ public class SwaggerConfig {
                 .paths(PathSelectors.any())
                 .build()
                 .apiInfo(metaData());
+        
     }
     
  
@@ -48,4 +49,5 @@ public class SwaggerConfig {
                 .version("1.0.0")
                 .build();
     }
+    
 }

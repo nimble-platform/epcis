@@ -404,9 +404,9 @@ public class MongoQueryService {
 		EPCISQueryDocumentType epcisQueryDocumentType = null;
 		JSONArray retArray = new JSONArray();
 
-        if (p.getMasterDataFormat() == null || p.getMasterDataFormat().equals("XML")) {
+        if (p.getFormat() == null || p.getFormat().equals("XML")) {
 			epcisQueryDocumentType = makeBaseResultDocument(p.getQueryName());
-        } else if (p.getMasterDataFormat().equals("JSON")) {
+        } else if (p.getFormat().equals("JSON")) {
 			// Do Nothing
 		} else {
 			throw new QueryParameterException();
@@ -445,7 +445,7 @@ public class MongoQueryService {
 		while (slCursor.hasNext()) {
 			BsonDocument dbObject = slCursor.next();
 
-            if (p.getMasterDataFormat() == null || p.getMasterDataFormat().equals("XML")) {
+            if (p.getFormat() == null || p.getFormat().equals("XML")) {
 				MasterDataReadConverter con = new MasterDataReadConverter();
 				VocabularyType vt = con.convert(dbObject);
 
@@ -512,7 +512,7 @@ public class MongoQueryService {
 
 		}
 
-        if (p.getMasterDataFormat() == null || p.getMasterDataFormat().equals("XML")) {
+        if (p.getFormat() == null || p.getFormat().equals("XML")) {
 			QueryResultsBody qbt = epcisQueryDocumentType.getEPCISBody().getQueryResults().getResultsBody();
 
 			VocabularyListType vlt = new VocabularyListType();
@@ -542,7 +542,7 @@ public class MongoQueryService {
 
 			}
 		}
-        if (p.getMasterDataFormat() == null || p.getMasterDataFormat().equals("XML")) {
+        if (p.getFormat() == null || p.getFormat().equals("XML")) {
 			StringWriter sw = new StringWriter();
 			JAXB.marshal(epcisQueryDocumentType, sw);
 			return sw.toString();
@@ -899,25 +899,27 @@ public class MongoQueryService {
 	private FindIterable<BsonDocument> makeProjectSortedLimitedCursor(FindIterable<BsonDocument> cursor,
 			Map<String, String> extParams, String orderBy, String orderDirection, Integer eventCountLimit) {
 
-		Iterator<Entry<String, String>> extParamIter = extParams.entrySet().iterator();
 		BsonDocument projection = new BsonDocument();
 		BsonBoolean projValue = null;
-		while (extParamIter.hasNext()) {
-			Entry<String, String> entry = extParamIter.next();
-			String paramKey = entry.getKey();
-			String paramValue = entry.getValue();
-			if (paramKey.startsWith("PROJECTION_")) {
-				if (projValue == null) {
-					if (paramValue != null && (paramValue.equals("true") || paramValue.equals("true^boolean"))) {
-						projValue = BsonBoolean.TRUE;
-					} else {
-						projValue = BsonBoolean.FALSE;
+		if(extParams != null) {
+			Iterator<Entry<String, String>> extParamIter = extParams.entrySet().iterator();
+			while (extParamIter.hasNext()) {
+				Entry<String, String> entry = extParamIter.next();
+				String paramKey = entry.getKey();
+				String paramValue = entry.getValue();
+				if (paramKey.startsWith("PROJECTION_")) {
+					if (projValue == null) {
+						if (paramValue != null && (paramValue.equals("true") || paramValue.equals("true^boolean"))) {
+							projValue = BsonBoolean.TRUE;
+						} else {
+							projValue = BsonBoolean.FALSE;
+						}
 					}
+					String projKey = paramKey.substring(11, paramKey.length());
+					// eventType is prohibited for projection
+					if (!projKey.equals("eventType"))
+						projection.put(projKey, projValue);
 				}
-				String projKey = paramKey.substring(11, paramKey.length());
-				// eventType is prohibited for projection
-				if (!projKey.equals("eventType"))
-					projection.put(projKey, projValue);
 			}
 		}
 		if (!projection.isEmpty()) {

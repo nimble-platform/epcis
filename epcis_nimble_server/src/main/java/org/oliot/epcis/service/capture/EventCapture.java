@@ -23,6 +23,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import eu.nimble.service.epcis.services.AuthorizationSrv;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import springfox.documentation.annotations.ApiIgnore;
 
 /**
  * Copyright (C) 2014-2017 Jaewook Byun
@@ -65,11 +71,41 @@ public class EventCapture {
 	 * @param gcpLength Global Company Prefix(GCP) length. 
 	 * @return
 	 */
+	@ApiOperation(value = "", notes = "Capture an EPCIS Event in XML. An example EPCIS Event is: <br><textarea disabled style=\"width:98%\" class=\"body-textarea\">" 
+			+ " \r\n" + 
+			"<epcis:EPCISDocument xmlns:epcis=\"urn:epcglobal:epcis:xsd:1\"\r\n" + 
+			"	xmlns:example=\"http://ns.example.com/epcis\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\r\n" + 
+			"	xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" creationDate=\"2005-07-11T11:30:47.0Z\"\r\n" + 
+			"	schemaVersion=\"1.2\">\r\n" + 
+			"	<EPCISBody>\r\n" + 
+			"		<EventList>\r\n" + 
+			"			<ObjectEvent>\r\n" + 
+			"				<eventTime>2018-04-03T20:33:31.116-06:00</eventTime>\r\n" + 
+			"				<eventTimeZoneOffset>-06:00</eventTimeZoneOffset>\r\n" + 
+			"				<epcList>\r\n" + 
+			"					<epc>urn:epc:id:sgtin:0614141.lindback.2017</epc>\r\n" + 
+			"				</epcList>\r\n" + 
+			"				<action>OBSERVE</action>\r\n" + 
+			"				<bizStep>urn:epcglobal:cbv:bizstep:other</bizStep>\r\n" + 
+			"				<readPoint>\r\n" + 
+			"					<id>urn:epc:id:sgln:readPoint.lindbacks.1</id>\r\n" + 
+			"				</readPoint>\r\n" + 
+			"				<bizLocation>\r\n" + 
+			"					<id>urn:epc:id:sgln:bizLocation.lindbacks.2</id>\r\n" + 
+			"				</bizLocation>\r\n" + 
+			"			</ObjectEvent>\r\n" + 
+			"		</EventList>\r\n" + 
+			"	</EPCISBody>\r\n" + 
+			"</epcis:EPCISDocument>" + "</textarea>", response = String.class)
+	@ApiImplicitParam(name = "inputString", value = "A XML value representing EPCIS Events.", dataType = "String", paramType = "body", required = true)
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "success"),
+			@ApiResponse(code = 400, message = "Failed.Input EPCIS Document does not comply the standard schema?"),
+			@ApiResponse(code = 401, message = "Unauthorized. Are the headers correct?"), })
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
 	public ResponseEntity<?> post(@RequestBody String inputString, 
 			@RequestHeader(value="Authorization", required=true) String bearerToken, 
-			@RequestParam(required = false) Integer gcpLength) {
+			@ApiParam(value = "Global Company Prefix(GCP) length") @RequestParam(required = false) Integer gcpLength) {
 		JSONObject retMsg = new JSONObject();
 
 		// Check NIMBLE authorization

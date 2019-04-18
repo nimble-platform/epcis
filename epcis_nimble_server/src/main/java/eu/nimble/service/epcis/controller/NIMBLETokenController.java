@@ -18,6 +18,10 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.ApiResponse;
+
 
 
 /**
@@ -36,6 +40,10 @@ public class NIMBLETokenController {
     @Autowired
     private RestTemplate restTemplate;
 	
+    @ApiOperation(value = "", notes = "Login NIMBLE Platform to get BearerToken with credentials.", response = String.class, tags = {})
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successful login"),
+            @ApiResponse(code = 401, message = "Login failed")})
 	@PostMapping("/getBearerToken")
 	public ResponseEntity<?> getAccessToken(@RequestParam(required = true) String userID,
 			@RequestParam(required = true) String password)

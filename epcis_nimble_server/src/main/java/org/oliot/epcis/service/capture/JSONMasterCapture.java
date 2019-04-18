@@ -2,6 +2,11 @@ package org.oliot.epcis.service.capture;
 
 import eu.nimble.service.epcis.services.AuthorizationSrv;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -30,14 +35,37 @@ public class JSONMasterCapture {
     @Autowired
     AuthorizationSrv authorizationSrv;
 
+	@ApiOperation(value = "", notes = "Capture an EPCIS Master Data in JSON. An example EPCIS Master Data is: <br><textarea disabled style=\"width:98%\" class=\"body-textarea\">" + 
+			" {\r\n" + 
+			"    \"epcismd\": {\r\n" + 
+			"        \"EPCISBody\": {\r\n" + 
+			"            \"VocabularyList\": [\r\n" + 
+			"                {\r\n" + 
+			"                    \"Vocabulary\": {\r\n" + 
+			"                        \"id\": \"202\",\r\n" + 
+			"                        \"type\": \"urn:epcglobal:epcis:vtype:SubSiteAttribute\",\r\n" + 
+			"                        \"attributes\": {\r\n" + 
+			"                            \"urn:epcglobal:cbv:mda#description\": \"Storage Area\"\r\n" + 
+			"                        }\r\n" + 
+			"                    }\r\n" + 
+			"                }\r\n" + 
+			"            ]\r\n" + 
+			"        }\r\n" + 
+			"    }\r\n" + 
+			"}"
+			+ " </textarea>", response = String.class)
+	@ApiImplicitParam(name = "inputString", value = "A JSON value representing EPCIS Master Data.", dataType = "String", paramType = "body", required = true)
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "success"),
+			@ApiResponse(code = 400, message = "Json Document is not valid?"),
+			@ApiResponse(code = 401, message = "Unauthorized. Are the headers correct?"), })
     @RequestMapping(method = RequestMethod.POST)
     @ResponseBody
     public ResponseEntity<?> post(@RequestBody String inputString,
-                                  @RequestHeader(value="Authorization", required= true) String accessToken,
-                                  @RequestParam(required = false) Integer gcpLength) {
+    		@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = true) String bearerToken
+                                ) {
 
         // Check NIMBLE authorization
-        String userPartyID = authorizationSrv.checkToken(accessToken);
+        String userPartyID = authorizationSrv.checkToken(bearerToken);
         if (userPartyID == null) {
             return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
         }
