@@ -4,13 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-<<<<<<< HEAD
 import eu.nimble.service.epcis.controller.BaseRestController;
-=======
 import javax.validation.Valid;
-
->>>>>>> 312a304ed42d43bb597f1e9e228cac9945d05740
 import org.json.JSONArray;
 import org.oliot.epcis.service.query.mongodb.MongoQueryService;
 import org.oliot.model.epcis.ImplementationException;
@@ -67,12 +62,8 @@ import springfox.documentation.annotations.ApiIgnore;
 
 @Api(tags = {"EPCIS Query Service"})
 @RestController
-<<<<<<< HEAD
-public class RESTLikeQueryService extends BaseRestController {
-=======
 @CrossOrigin()
-public class RESTLikeQueryService {
->>>>>>> 312a304ed42d43bb597f1e9e228cac9945d05740
+public class RESTLikeQueryService extends BaseRestController {
 
 	@Autowired
 	AuthorizationSrv authorizationSrv;
