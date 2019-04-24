@@ -22,6 +22,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.nimble.service.epcis.services.AuthorizationSrv;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 
 /**
  * Copyright (C) 2014-2017 Jaewook Byun
@@ -44,6 +50,7 @@ import eu.nimble.service.epcis.services.AuthorizationSrv;
 */
 
 
+@Api(tags = {"EPCIS XML Master Data Capture"})
 @CrossOrigin()
 @RestController
 @RequestMapping("/VocabularyCapture")
@@ -57,10 +64,35 @@ public class VocabularyCapture {
 	CaptureService captureService;
 
 
+	@ApiOperation(value = "", notes = "Capture an EPCIS Master Data in XML. An example EPCIS Master Data is: <br><textarea disabled style=\"width:98%\" class=\"body-textarea\">" + 
+			" <!DOCTYPE EPCISDocument>\r\n" + 
+			"<epcismd:EPCISMasterDataDocument\r\n" + 
+			"	creationDate=\"2015-04-09T12:00:00\" schemaVersion=\"0.0\" xmlns:epcglobal=\"epcglobal.oliot.org\"\r\n" + 
+			"	xmlns:epcis=\"epcis.oliot.org\" xmlns:epcismd=\"masterdata.epcis.oliot.org\">\r\n" + 
+			"	<EPCISBody>\r\n" + 
+			"		<VocabularyList>\r\n" + 
+			"			<Vocabulary type=\"urn:epcglobal:epcis:vtype:ReadPoint\">\r\n" + 
+			"				<VocabularyElementList>\r\n" + 
+			"					<!-- Section 10.3 - Location Master Data Names -->\r\n" + 
+			"					<VocabularyElement id=\"urn:epc:id:sgln:readPoint.PodComp.0\">\r\n" + 
+			"						<attribute id=\"urn:epcglobal:cbv:mda#name\">PodComp factory</attribute>\r\n" + 
+			"						<attribute id=\"urn:epcglobal:cbv:mda:site\">PodComp factory</attribute>\r\n" + 
+			"					</VocabularyElement>\r\n" + 
+			"				</VocabularyElementList>\r\n" + 
+			"			</Vocabulary>\r\n" + 
+			"		</VocabularyList>\r\n" + 
+			"	</EPCISBody>\r\n" + 
+			"</epcismd:EPCISMasterDataDocument>"
+			+ " </textarea>", response = String.class)
+	@ApiImplicitParam(name = "inputString", value = "A XML value representing EPCIS Master Data.", dataType = "String", paramType = "body", required = true)
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "success"),
+			@ApiResponse(code = 400, message = "Failed. EPCIS Masterdata Document is not valid?"),
+			@ApiResponse(code = 401, message = "Unauthorized. Are the headers correct?"), })
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<?> post(@RequestBody String inputString, @RequestHeader(value="Authorization", required=true) String bearerToken, 
-			@RequestParam(required = false) Integer gcpLength) {
+	public ResponseEntity<?> post(@RequestBody String inputString, 
+			@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = true) String bearerToken,
+			@ApiParam(value = "Global Company Prefix(GCP) length") @RequestParam(required = false) Integer gcpLength) {
 
 		// Check NIMBLE authorization
 		String userPartyID = authorizationSrv.checkToken(bearerToken);

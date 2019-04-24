@@ -1,17 +1,21 @@
 package org.oliot.epcis.service.capture;
 
 import java.util.Iterator;
+import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.oliot.epcis.configuration.Configuration;
+import org.oliot.epcis.converter.mongodb.model.Epcis;
+import org.oliot.epcis.converter.mongodb.model.testModel;
 import org.oliot.epcis.service.capture.mongodb.MongoCaptureUtil;
 import org.oliot.model.jsonschema.JsonSchemaLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,6 +27,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.nimble.service.epcis.services.AuthorizationSrv;
+import io.swagger.annotations.*;
+import springfox.documentation.annotations.ApiIgnore;
+
+import org.oliot.model.epcis.EPCISDocumentType;
 
 /**
  * Copyright (C) 2017 Jaewook Jack Byun, Sungpil Woo
@@ -50,411 +58,82 @@ import eu.nimble.service.epcis.services.AuthorizationSrv;
  */
 
 /**
-* Modifications copyright (C) 2019 Quan Deng
-*/
+ * Modifications copyright (C) 2019 Quan Deng
+ */
 
-
+@Api(tags = { "EPCIS JSON Event Capture" })
 @CrossOrigin()
 @RestController
 @RequestMapping("/JSONEventCapture")
 public class JSONEventCapture {
-    private static Logger log = LoggerFactory.getLogger(JSONEventCapture.class);
+	private static Logger log = LoggerFactory.getLogger(JSONEventCapture.class);
 
 	@Autowired
 	AuthorizationSrv authorizationSrv;
-	
+
+	@Autowired
+	JSONEventCaptureService jsonEventCaptureSrv;
+
+	@ApiOperation(value = "", notes = "Capture an EPCIS Event in JSON. An example EPCIS Event is: <br> <textarea disabled style=\"width:98%\" class=\"body-textarea\">" 
+			+ " {\r\n" + 
+			"  \"epcis\": {\r\n" + 
+			"    \"EPCISBody\": {\r\n" + 
+			"      \"EventList\": [\r\n" + 
+			"        {\r\n" + 
+			"          \"ObjectEvent\": {\r\n" + 
+			"            \"eventTime\": 1522809211116,\r\n" + 
+			"            \"eventTimeZoneOffset\": \"-06:00\",\r\n" + 
+			"            \"epcList\": [\r\n" + 
+			"              {\r\n" + 
+			"                \"epc\": \"TEST848777\"\r\n" + 
+			"              }\r\n" + 
+			"            ],\r\n" + 
+			"            \"action\": \"OBSERVE\",\r\n" + 
+			"            \"bizStep\": \"urn:epcglobal:cbv:bizstep:other\",\r\n" + 
+			"            \"readPoint\": {\r\n" + 
+			"              \"id\": \"urn:epc:id:sgln:readPoint.PodComp.1\"\r\n" + 
+			"            },\r\n" + 
+			"            \"bizLocation\": {\r\n" + 
+			"              \"id\": \"urn:epc:id:sgln:bizLocation.PodComp.2\"\r\n" + 
+			"            }\r\n" + 
+			"          }\r\n" + 
+			"        }\r\n" + 
+			"      ]\r\n" + 
+			"    }\r\n" + 
+			"  }\r\n" + 
+			"}\r\n" + 
+			""
+			+ "</textarea> ", response = String.class)
+	@ApiImplicitParam(name = "inputString", value = "A JSON value representing EPCIS Events.", dataType = "String", paramType = "body", required = true)
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "success"),
+			@ApiResponse(code = 400, message = "Json Document is not valid?"),
+			@ApiResponse(code = 401, message = "Unauthorized. Are the headers correct?"), })
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
 	public ResponseEntity<?> post(@RequestBody String inputString,
-			@RequestHeader(value="Authorization", required=true) String bearerToken, 
-			@RequestParam(required = false) Integer gcpLength) {
-		
+			@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = true) String bearerToken) {
+
 		// Check NIMBLE authorization
 		String userPartyID = authorizationSrv.checkToken(bearerToken);
 		if (userPartyID == null) {
 			return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
 		}
-		
-		//TODO: Permission check for each event on the list. Return error, in case no permission on some events.
-		//TODO: Save userPartyID into Event i.e. MongoDB. So that it is possible to know from whom the event is added, for the purpose of audit etc.   
-		
+
+		// TODO: Advanced permission control. Permission check for each event on the
+		// list. Return error, in case no permission on some events.
+
 		log.info(" EPCIS Json Document Capture Started.... ");
 
-		if (Configuration.isCaptureVerfificationOn == true) {
-
-			// JSONParser parser = new JSONParser();
-			JsonSchemaLoader schemaLoader = new JsonSchemaLoader();
-
-			try {
-
-				JSONObject jsonEvent = new JSONObject(inputString);
-				JSONObject jsonEventSchema = schemaLoader.getEventSchema();
-
-				if (!CaptureUtil.validate(jsonEvent, jsonEventSchema)) {
-					log.info("Json Document is invalid" + " about general_validcheck");
-
-					return new ResponseEntity<>("Error: Json Document is not valid" + "general_validcheck",
-							HttpStatus.BAD_REQUEST);
-
-				}
-
-				/* Schema check for Capture */
-
-				JSONArray jsonEventList = jsonEvent.getJSONObject("epcis").getJSONObject("EPCISBody")
-						.getJSONArray("EventList");
-
-				for (int i = 0; i < jsonEventList.length(); i++) {
-					JSONObject jsonEventElement = jsonEventList.getJSONObject(i);
-
-					if (jsonEventElement.has("ObjectEvent") == true) {
-
-						/* startpoint of validation logic for ObjectEvent */
-						JSONObject objectEventSchema = schemaLoader.getObjectEventSchema();
-						JSONObject jsonObjectEvent = jsonEventElement.getJSONObject("ObjectEvent");
-
-						if (!CaptureUtil.validate(jsonObjectEvent, objectEventSchema)) {
-							log
-									.info("Json Document is not valid" + " detail validation check for objectevent");
-							return new ResponseEntity<>("Error: Json Document is not valid"
-									+ " for detail validation check for objectevent", HttpStatus.BAD_REQUEST);
-
-						}
-
-						/* finish validation logic for ObjectEvent */
-						if (!jsonObjectEvent.has("recordTime")) {
-							jsonObjectEvent.put("recordTime", System.currentTimeMillis());
-						}
-						
-						if (!jsonObjectEvent.has("eventType")) {
-							jsonObjectEvent.put("eventType", "ObjectEvent");
-						}
-
-						if (jsonObjectEvent.has("any")) {
-							/* start finding namespace in the any field. */
-							JSONObject anyobject = jsonObjectEvent.getJSONObject("any");
-							String namespace = "";
-							boolean namespace_flag = false;
-
-							Iterator<String> keyIter_ns = anyobject.keys();
-							while (keyIter_ns.hasNext()) {
-								String temp = keyIter_ns.next();
-								if (temp.substring(0, 1).equals("@")) {
-									namespace_flag = true;
-									namespace = temp.substring(1, temp.length());
-								}
-							}
-
-							if (!namespace_flag) {
-								log.info("Json Document doesn't have namespace in any field");
-								return new ResponseEntity<>(
-										"Error: Json Document doesn't have namespace in any field"
-												+ " for detail validation check for objectevent",
-										HttpStatus.BAD_REQUEST);
-
-							}
-							/* finish finding namespace in the any field. */
-
-							/*
-							 * Start Validation whether each component use correct name space
-							 */;
-
-							Iterator<String> keyIter = anyobject.keys();
-							while (keyIter.hasNext()) {
-								String temp = keyIter.next();
-
-								if (!temp.contains(namespace)) {
-									log.info("Json Document use invalid namespace in anyfield");
-
-									return new ResponseEntity<>(
-											"Error: Json Document use invalid namespace in anyfield"
-													+ " for detail validation check for objectevent",
-											HttpStatus.BAD_REQUEST);
-
-								}
-							}
-							/*
-							 * Finish validation whether each component use correct name space
-							 */
-
-						}
-
-						MongoCaptureUtil m = new MongoCaptureUtil();
-						m.captureJSONEvent(jsonObjectEvent, userPartyID);
-
-					} else if (jsonEventElement.has("AggregationEvent") == true) {
-
-						/*
-						 * startpoint of validation logic for AggregationEvent
-						 */
-						JSONObject aggregationEventSchema = schemaLoader.getAggregationEventSchema();
-						JSONObject jsonAggregationEvent = jsonEventElement.getJSONObject("AggregationEvent");
-
-						if (!CaptureUtil.validate(jsonAggregationEvent, aggregationEventSchema)) {
-
-							log.info(
-									"Json Document is not valid" + " detail validation check for aggregationevent");
-
-							return new ResponseEntity<>(
-									"Error: Json Document is not valid"
-											+ " for detail validation check for aggregationevent",
-									HttpStatus.BAD_REQUEST);
-
-						}
-						/* finish validation logic for AggregationEvent */
-
-						if (!jsonAggregationEvent.has("recordTime")) {
-							jsonAggregationEvent.put("recordTime", System.currentTimeMillis());
-						}
-						
-						if (!jsonAggregationEvent.has("eventType")) {
-							jsonAggregationEvent.put("eventType", "AggregationEvent");
-						}
-
-						if (jsonAggregationEvent.has("any")) {
-							/* start finding namespace in the any field. */
-							JSONObject anyobject = jsonAggregationEvent.getJSONObject("any");
-							String namespace = "";
-							boolean namespace_flag = false;
-
-							Iterator<String> keyIter_ns = anyobject.keys();
-							while (keyIter_ns.hasNext()) {
-								String temp = keyIter_ns.next();
-								if (temp.substring(0, 1).equals("@")) {
-									namespace_flag = true;
-									namespace = temp.substring(1, temp.length());
-								}
-							}
-
-							if (!namespace_flag) {
-								log.info("Json Document doesn't have namespace in any field");
-
-								return new ResponseEntity<>(
-										"Error: Json Document doesn't have namespace in any field"
-												+ " for detail validation check for aggregationevent",
-										HttpStatus.BAD_REQUEST);
-
-							}
-							/* finish finding namespace in the any field. */
-
-							/*
-							 * Start Validation whether each component use correct name space
-							 */;
-
-							Iterator<String> keyIter = anyobject.keys();
-							while (keyIter.hasNext()) {
-								String temp = keyIter.next();
-
-								if (!temp.contains(namespace)) {
-									log.info("Json Document use invalid namespace in anyfield");
-
-									return new ResponseEntity<>(
-											"Error: Json Document use invalid namespace in anyfield"
-													+ " for detail validation check for aggregationevent",
-											HttpStatus.BAD_REQUEST);
-
-								}
-							}
-
-						}
-						MongoCaptureUtil m = new MongoCaptureUtil();
-						m.captureJSONEvent(jsonEventList.getJSONObject(i).getJSONObject("AggregationEvent"), userPartyID);
-
-					} else if (jsonEventElement.has("TransformationEvent") == true) {
-
-						/*
-						 * startpoint of validation logic for TransFormationEvent
-						 */
-						JSONObject transformationEventSchema = schemaLoader.getTransformationEventSchema();
-						JSONObject jsonTransformationEvent = jsonEventElement.getJSONObject("TransformationEvent");
-
-						if (!CaptureUtil.validate(jsonTransformationEvent, transformationEventSchema)) {
-
-							log.info(
-									"Json Document is not valid" + " detail validation check for TransFormationEvent");
-
-							return new ResponseEntity<>(
-									"Error: Json Document is not valid"
-											+ " for detail validation check for TransFormationEvent",
-									HttpStatus.BAD_REQUEST);
-
-						}
-						/* finish validation logic for TransFormationEvent */
-
-						if (!jsonTransformationEvent.has("recordTime")) {
-							jsonTransformationEvent.put("recordTime", System.currentTimeMillis());
-						}
-						
-						if (!jsonTransformationEvent.has("eventType")) {
-							jsonTransformationEvent.put("eventType", "TransformationEvent");
-						}
-
-						if (jsonTransformationEvent.has("any")) {
-							/* start finding namespace in the any field. */
-							JSONObject anyobject = jsonTransformationEvent.getJSONObject("any");
-							String namespace = "";
-							boolean namespace_flag = false;
-
-							Iterator<String> keyIter_ns = anyobject.keys();
-							while (keyIter_ns.hasNext()) {
-								String temp = keyIter_ns.next();
-								if (temp.substring(0, 1).equals("@")) {
-									namespace_flag = true;
-									namespace = temp.substring(1, temp.length());
-								}
-							}
-
-							if (!namespace_flag) {
-								log.info("Json Document doesn't have namespace in any field");
-								return new ResponseEntity<>(
-										"Error: Json Document doesn't have namespace in any field"
-												+ " for detail validation check for TransformationEvent",
-										HttpStatus.BAD_REQUEST);
-
-							}
-							/* finish finding namespace in the any field. */
-
-							/*
-							 * Start Validation whether each component use correct name space
-							 */;
-
-							Iterator<String> keyIter = anyobject.keys();
-							while (keyIter.hasNext()) {
-								String temp = keyIter.next();
-
-								if (!temp.contains(namespace)) {
-									log.info("Json Document use invalid namespace in anyfield");
-									return new ResponseEntity<>(
-											"Error: Json Document use invalid namespace in anyfield"
-													+ " for detail validation check for TransformationEvent",
-											HttpStatus.BAD_REQUEST);
-								}
-							}
-						}
-
-						MongoCaptureUtil m = new MongoCaptureUtil();
-						m.captureJSONEvent(jsonEventList.getJSONObject(i).getJSONObject("TransformationEvent"), userPartyID);
-
-					} else if (jsonEventElement.has("TransactionEvent") == true) {
-
-						/*
-						 * startpoint of validation logic for TransFormationEvent
-						 */
-						JSONObject transactionEventSchema = schemaLoader.getTransactionEventSchema();
-						JSONObject jsonTransactionEvent = jsonEventElement.getJSONObject("TransactionEvent");
-
-						if (!CaptureUtil.validate(jsonTransactionEvent, transactionEventSchema)) {
-
-							log.info(
-									"Json Document is not valid." + " detail validation check for TransactionEvent");
-							return new ResponseEntity<>(
-									"Error: Json Document is not valid"
-											+ " for detail validation check for TransactionEvent",
-									HttpStatus.BAD_REQUEST);
-
-						}
-						/* finish validation logic for TransFormationEvent */
-
-						if (!jsonTransactionEvent.has("recordTime")) {
-							jsonTransactionEvent.put("recordTime", System.currentTimeMillis());
-						}
-						
-						if (!jsonTransactionEvent.has("eventType")) {
-							jsonTransactionEvent.put("eventType", "TransactionEvent");
-						}
-
-						if (jsonTransactionEvent.has("any")) {
-							/* start finding namespace in the any field. */
-							JSONObject anyobject = jsonTransactionEvent.getJSONObject("any");
-							String namespace = "";
-							boolean namespace_flag = false;
-
-							Iterator<String> keyIter_ns = anyobject.keys();
-							while (keyIter_ns.hasNext()) {
-								String temp = keyIter_ns.next();
-								if (temp.substring(0, 1).equals("@")) {
-									namespace_flag = true;
-									namespace = temp.substring(1, temp.length());
-								}
-							}
-
-							if (!namespace_flag) {
-								log.info("Json Document doesn't have namespace in any field");
-								return new ResponseEntity<>(
-										"Error: Json Document doesn't have namespace in any field"
-												+ " for detail validation check for TransactionEvent",
-										HttpStatus.BAD_REQUEST);
-
-							}
-							/* finish finding namespace in the any field. */
-
-							/*
-							 * Start Validation whether each component use correct name space
-							 */;
-
-							Iterator<String> keyIter = anyobject.keys();
-							while (keyIter.hasNext()) {
-								String temp = keyIter.next();
-
-								if (!temp.contains(namespace)) {
-									log.info("Json Document use invalid namespace in anyfield");
-									return new ResponseEntity<>(
-											"Error: Json Document use invalid namespace in anyfield"
-													+ " for detail validation check for TransactionEvent",
-											HttpStatus.BAD_REQUEST);
-								}
-							}
-
-						}
-
-						MongoCaptureUtil m = new MongoCaptureUtil();
-						m.captureJSONEvent(jsonEventList.getJSONObject(i).getJSONObject("TransactionEvent"), userPartyID);
-					} else {
-						log
-								.info("Json Document is not valid. " + " It doesn't have standard event_type");
-						return new ResponseEntity<>(
-								"Error: Json Document is not valid" + " It doesn't have standard event_type",
-								HttpStatus.BAD_REQUEST);
-
-					}
-
-				}
-				if (jsonEventList.length() != 0)
-					log.info(" EPCIS Document : Captured ");
-
-			} catch (JSONException e) {
-				log.info(" Json Document is not valid " + "second_validcheck");
-			} catch (Exception e) {
-				log.error(e.toString());
-			}
-
-			return new ResponseEntity<>("EPCIS Document : Captured ", HttpStatus.OK);
-
-		} else {
-			JSONObject jsonEvent = new JSONObject(inputString);
-			JSONArray jsonEventList = jsonEvent.getJSONObject("epcis").getJSONObject("EPCISBody")
-					.getJSONArray("EventList");
-
-			for (int i = 0; i < jsonEventList.length(); i++) {
-
-				JSONObject jsonEventElement = jsonEventList.getJSONObject(i);
-
-				if (jsonEventElement.has("ObjectEvent") == true) {
-					MongoCaptureUtil m = new MongoCaptureUtil();
-					m.captureJSONEvent(jsonEventElement.getJSONObject("ObjectEvent"), userPartyID);
-				} else if (jsonEventElement.has("AggregationEvent") == true) {
-					MongoCaptureUtil m = new MongoCaptureUtil();
-					m.captureJSONEvent(jsonEventElement.getJSONObject("AggregationEvent"), userPartyID);
-				} else if (jsonEventElement.has("TransformationEvent") == true) {
-					MongoCaptureUtil m = new MongoCaptureUtil();
-					m.captureJSONEvent(jsonEventElement.getJSONObject("TransformationEvent"), userPartyID);
-				} else if (jsonEventElement.has("TransactionEvent") == true) {
-					MongoCaptureUtil m = new MongoCaptureUtil();
-					m.captureJSONEvent(jsonEventElement.getJSONObject("TransactionEvent"), userPartyID);
-				}
-			}
+		List<JSONObject> validJsonEventList = jsonEventCaptureSrv.prepareJSONEvents(inputString);
+		if (null == validJsonEventList) {
+			log.info("No Events Captured!");
+			return new ResponseEntity<>("Error: Json Document is not valid. Details can be found in the log files.",
+					HttpStatus.BAD_REQUEST);
 		}
-		return new ResponseEntity<>("EPCIS Document : Captured ", HttpStatus.OK);
 
+		jsonEventCaptureSrv.capturePreparedJSONEvents(validJsonEventList, userPartyID);
+
+		return new ResponseEntity<>("EPCIS Document : Captured ", HttpStatus.OK);
 	}
 
 }

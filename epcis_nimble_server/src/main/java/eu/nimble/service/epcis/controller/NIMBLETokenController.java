@@ -10,18 +10,27 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.ApiResponse;
+
+
 
 /**
 * Created by Quan Deng, 2019
 */
 
+@Api(tags = {"NIMBLE Token Management"})
 @RestController
+@CrossOrigin()
 public class NIMBLETokenController {
     private static Logger log = LoggerFactory.getLogger(NIMBLETokenController.class);
 
@@ -31,6 +40,10 @@ public class NIMBLETokenController {
     @Autowired
     private RestTemplate restTemplate;
 	
+    @ApiOperation(value = "", notes = "Login NIMBLE Platform to get BearerToken with credentials.", response = String.class, tags = {})
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Successful login"),
+            @ApiResponse(code = 401, message = "Login failed")})
 	@PostMapping("/getBearerToken")
 	public ResponseEntity<?> getAccessToken(@RequestParam(required = true) String userID,
 			@RequestParam(required = true) String password)

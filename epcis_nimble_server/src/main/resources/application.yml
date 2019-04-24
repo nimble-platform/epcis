@@ -15,6 +15,10 @@ spring:
     date-format: com.fasterxml.jackson.databind.util.ISO8601DateFormat
     serialization:
       WRITE_DATES_AS_TIMESTAMPS: false
+  cache:
+    cache-names: token
+    caffeine:
+      spec: initialCapacity=50,maximumSize=500,expireAfterWrite=3600s
   data:
     mongodb:
       database: ${EPCIS_DB_NAME:epcis} 
@@ -27,6 +31,8 @@ springfox:
     swagger:
       v2:
         path: /api-docs
+nimble:
+  platformHost: ${EPCIS_SERVICE_URL:http://localhost:8080}
 epcis:
   capture:
     verification: true   

@@ -5,7 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+<<<<<<< HEAD
 import eu.nimble.service.epcis.controller.BaseRestController;
+=======
+import javax.validation.Valid;
+
+>>>>>>> 312a304ed42d43bb597f1e9e228cac9945d05740
 import org.json.JSONArray;
 import org.oliot.epcis.service.query.mongodb.MongoQueryService;
 import org.oliot.model.epcis.ImplementationException;
@@ -22,6 +27,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -30,6 +36,13 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import eu.nimble.service.epcis.services.AuthorizationSrv;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import springfox.documentation.annotations.ApiIgnore;
 
 /**
  * Copyright (C) 2014-2016 Jaewook Byun
@@ -52,9 +65,14 @@ import eu.nimble.service.epcis.services.AuthorizationSrv;
 */
 
 
-@CrossOrigin()
+@Api(tags = {"EPCIS Query Service"})
 @RestController
+<<<<<<< HEAD
 public class RESTLikeQueryService extends BaseRestController {
+=======
+@CrossOrigin()
+public class RESTLikeQueryService {
+>>>>>>> 312a304ed42d43bb597f1e9e228cac9945d05740
 
 	@Autowired
 	AuthorizationSrv authorizationSrv;
@@ -71,6 +89,9 @@ public class RESTLikeQueryService extends BaseRestController {
 	 * 
 	 * @return JSONArray of query names ( String )
 	 */
+	@ApiOperation(value = "", notes = "Returns a list of all query names available for use with the subscribe and poll methods. "
+			+ "This includes all pre-defined queries provided by the implementation, including those specified in Section 8.2.7. ", response = String.class)
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "success")})
 	@RequestMapping(value = "/GetQueryNames", method = RequestMethod.GET)
 	@ResponseBody
 	public ResponseEntity<?> getQueryNamesREST()
@@ -113,6 +134,11 @@ public class RESTLikeQueryService extends BaseRestController {
 	 * 
 	 * @return 1.2
 	 */
+	@ApiOperation(value = "", notes = "Returns a string that identifies what version of the "
+			+ "specification this implementation complies with. The possible values for this string are defined by GS1. "
+			+ "An implementation SHALL return a string corresponding to a version of this specification to which the implementation fully "
+			+ "complies, and SHOULD return the string corresponding to the latest version to which it complies. "
+			+ "To indicate compliance with this Version 1.2 of the EPCIS specification, the implementation SHALL return the string 1.2.", response = String.class)
 	@RequestMapping(value = "/GetStandardVersion", method = RequestMethod.GET)
 	@ResponseBody
 	public ResponseEntity<?> getStandardVersion()
@@ -136,6 +162,13 @@ public class RESTLikeQueryService extends BaseRestController {
 	 * 
 	 * @return a string of vendor version
 	 */
+	@ApiOperation(value = "", notes = "Returns a string that identifies what vendor extensions this implementation provides. "
+			+ "The possible values of this string and their meanings are vendor-defined, except that the empty string SHALL "
+			+ "indicate that the implementation implements only standard functionality with no vendor extensions. "
+			+ "When an implementation chooses to return a non-empty string, the value returned SHALL be a URI where"
+			+ " the vendor is the owning authority. For example, this may be an HTTP URL whose authority portion is a domain name owned by the vendor, "
+			+ "a URN having a URN namespace identifier issued to the vendor by IANA, an OID URN whose initial path is a Private Enterprise Number assigned to the vendor, etc. ",
+			response = String.class)
 	@RequestMapping(value = "/GetVendorVersion", method = RequestMethod.GET)
 	@ResponseBody
 	public ResponseEntity<?> getVendorVersion() throws SecurityException, ValidationException, ImplementationException {
@@ -146,10 +179,14 @@ public class RESTLikeQueryService extends BaseRestController {
 		return new ResponseEntity<>(new String("org.oliot.epcis-1.2.10"), responseHeaders, HttpStatus.OK);
 	}	
 	
-	// TODO:
+	@ApiOperation(value = "Get production process template for the given product class.", notes = "Return production process template, which consists of a list of production process steps", 
+			response = org.oliot.epcis.converter.mongodb.model.ProductionProcessStep.class, responseContainer="List")
+	@ApiResponses(value = { @ApiResponse(code = 200, message = "success"),
+			@ApiResponse(code = 401, message = "Unauthorized. Are the headers correct?"), })
 	@RequestMapping(value = "/GetProductionProcessTemplate/{productClass}", method = RequestMethod.GET)
 	@ResponseBody
-    public ResponseEntity<?> getProductionProcessTemplate(@PathVariable String productClass, @RequestHeader(value="Authorization", required=true) String bearerToken) 
+    public ResponseEntity<?> getProductionProcessTemplate(@ApiParam(value = "Product Categoy ID in NIMBLE Platform", required = true)  @PathVariable String productClass, 
+    		@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = true)  String bearerToken) 
     		throws IOException, QueryTooLargeException, QueryParameterException {
 		
 		// Check NIMBLE authorization
@@ -166,8 +203,72 @@ public class RESTLikeQueryService extends BaseRestController {
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.add("Content-Type", "application/json; charset=utf-8");
         return new ResponseEntity<>(result, responseHeaders, HttpStatus.OK);
-    }     
-
+    }   
+	
+	/**
+	 * Invokes a previously defined query having the specified name, returning the results. The params argument provides the values to be used for any named parameters defined by the query
+	 * @param queryName
+	 * @param bearerToken
+	 * @param eventType
+	 * @param GE_eventTime
+	 * @param LT_eventTime
+	 * @param GE_masterTime
+	 * @param LE_masterTime
+	 * @param GE_recordTime
+	 * @param LT_recordTime
+	 * @param EQ_action
+	 * @param EQ_bizStep
+	 * @param EQ_disposition
+	 * @param EQ_readPoint
+	 * @param WD_readPoint
+	 * @param EQ_bizLocation
+	 * @param WD_bizLocation
+	 * @param EQ_transformationID
+	 * @param MATCH_epc
+	 * @param MATCH_parentID
+	 * @param MATCH_inputEPC
+	 * @param MATCH_outputEPC
+	 * @param MATCH_anyEPC
+	 * @param MATCH_epcClass
+	 * @param MATCH_inputEPCClass
+	 * @param MATCH_outputEPCClass
+	 * @param MATCH_anyEPCClass
+	 * @param EQ_quantity
+	 * @param GT_quantity
+	 * @param GE_quantity
+	 * @param LT_quantity
+	 * @param LE_quantity
+	 * @param EQ_eventID
+	 * @param EXISTS_errorDeclaration
+	 * @param GE_errorDeclarationTime
+	 * @param LT_errorDeclarationTime
+	 * @param EQ_errorReason
+	 * @param EQ_correctiveEventID
+	 * @param orderBy
+	 * @param orderDirection
+	 * @param eventCountLimit
+	 * @param maxEventCount
+	 * @param vocabularyName
+	 * @param includeAttributes
+	 * @param includeChildren
+	 * @param attributeNames
+	 * @param EQ_name
+	 * @param WD_name
+	 * @param HASATTR
+	 * @param maxElementCount
+	 * @param format Format of experted result. JSON or XML.
+	 * @param params
+	 * @return
+	 * @throws QueryParameterException
+	 * @throws QueryTooLargeException
+	 * @throws QueryTooComplexException
+	 * @throws NoSuchNameException
+	 * @throws SecurityException
+	 * @throws ValidationException
+	 * @throws ImplementationException
+	 */
+	//TODO: Swagger has problem to document the API with too much params
+	@ApiIgnore
 	@RequestMapping(value = "/Poll/{queryName}", method = RequestMethod.GET)
 	@ResponseBody
 	public ResponseEntity<?> poll(@PathVariable String queryName, 
@@ -211,7 +312,6 @@ public class RESTLikeQueryService extends BaseRestController {
 			@RequestParam(required = false) Integer maxElementCount,
 
 			@RequestParam(required = false) String format,
-            @RequestParam(required = false) String masterDataFormat,
 			@RequestParam Map<String, String> params)
 			throws QueryParameterException, QueryTooLargeException, QueryTooComplexException, NoSuchNameException,
 			SecurityException, ValidationException, ImplementationException {
@@ -238,10 +338,47 @@ public class RESTLikeQueryService extends BaseRestController {
                 EXISTS_errorDeclaration, GE_errorDeclarationTime, LT_errorDeclarationTime, EQ_errorReason,
                 EQ_correctiveEventID, orderBy, orderDirection, eventCountLimit, maxEventCount, vocabularyName,
                 includeAttributes, includeChildren, attributeNames, EQ_name, WD_name, HASATTR, maxElementCount, format,
-                masterDataFormat, params);
+                 params);
 
 		String result = mongoQueryService.poll(pollParams, userPartyID);
 		return new ResponseEntity<>(result, responseHeaders, HttpStatus.OK);
 	}
+	
+	
+	@ApiOperation(value = "", notes = "Invokes a previously defined query having the specified name, returning the results. The\r\n" + 
+			"params argument provides the values to be used for any named parameters defined by the\r\n" + 
+			"query.", response = String.class)
+	@RequestMapping(value = "/Poll/{queryName}", method = RequestMethod.POST)
+	@ResponseBody
+	public ResponseEntity<?> poll(@ApiParam(value = "Available query names. i.e. SimpleEventQuery, SimpleMasterDataQuery.", allowableValues = "SimpleEventQuery,SimpleMasterDataQuery", 
+	example = "SimpleEventQuery", required = true) @PathVariable String queryName, 
+			@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = true) String bearerToken, 
+			@ApiParam(value = "Query Params according to the EPCIS Standard 1.2. "
+					+ "A QueryParams instance is simply a set of name/value pairs, where the names correspond to parameter names defined by the query, "
+					+ "and the values are the specific values to be used for that invocation of (poll) or subscription to (subscribe) the query. "
+					+ "Example value for event query: {\"format\": \"JSON\", \"match_epc\":\"urn:epc:id:sgtin:0614141.107346.2017\"} ; Example value for master data query: {\"format\": \"JSON\", \"eq_name\":\"202\"}", required = true) 
+	@Valid @RequestBody PollParameters parmas) 
+					throws QueryParameterException, QueryTooLargeException, QueryTooComplexException, NoSuchNameException,
+			SecurityException, ValidationException, ImplementationException {
+		HttpHeaders responseHeaders = new HttpHeaders();
+		if (parmas.getFormat() != null && parmas.getFormat().equals("JSON")) {
+			responseHeaders.add("Content-Type", "application/json; charset=utf-8");
+		} else {
+			responseHeaders.add("Content-Type", "application/xml; charset=utf-8");
+		}
+		
+		parmas.setQueryName(queryName);
+		
+		// Check NIMBLE authorization
+		String userPartyID = authorizationSrv.checkToken(bearerToken);
+		if (userPartyID == null) {
+			return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
+		}
+		
+		String result = mongoQueryService.poll(parmas, userPartyID);
+		return new ResponseEntity<>(result, responseHeaders, HttpStatus.OK);
+	}
+	
+	
 
 }

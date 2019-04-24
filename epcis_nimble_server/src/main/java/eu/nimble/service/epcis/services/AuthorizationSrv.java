@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -38,6 +39,7 @@ public class AuthorizationSrv {
 	 * @param accessToken  OpenID Connect token storing identity.
 	 * @return  Identifier of associated company; null, in case of exception or no valid user.
 	 */
+     @Cacheable(value = "token",sync = true)
 	 public String checkToken(String accessToken)
 	 {
 		 if (accessToken == null) {
@@ -54,6 +56,7 @@ public class AuthorizationSrv {
 	        String userPartyID = "";
 	        try {
 	        	HttpEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<Object>(headers) , String.class);
+	        	log.info("re-fetching ublPartyID from NIMBLE identity service!");
 		        JSONObject jsonUser = new JSONObject(response.getBody());
 		        userPartyID = jsonUser.getString("ublPartyID");
 		        
