@@ -64,7 +64,7 @@ import org.oliot.model.epcis.EPCISDocumentType;
 @Api(tags = { "EPCIS JSON Event Capture" })
 @CrossOrigin()
 @RestController
-@RequestMapping("/JSONEventCapture")
+@RequestMapping("/Service/JSONEventCapture")
 public class JSONEventCapture {
 	private static Logger log = LoggerFactory.getLogger(JSONEventCapture.class);
 

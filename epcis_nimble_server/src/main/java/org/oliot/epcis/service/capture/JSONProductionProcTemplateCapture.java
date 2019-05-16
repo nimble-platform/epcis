@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -39,7 +40,7 @@ import io.swagger.annotations.ApiResponses;
 @Api(tags = {"Production Process JSON Template Capture"})
 @CrossOrigin()
 @RestController
-@RequestMapping("/JSONProductionProcTemplateCapture")
+@RequestMapping("/Service/JSONProductionProcTemplateCapture")
 public class JSONProductionProcTemplateCapture {
     private static Logger log = LoggerFactory.getLogger(JSONProductionProcTemplateCapture.class);
 
@@ -54,15 +55,15 @@ public class JSONProductionProcTemplateCapture {
 			@ApiResponse(code = 401, message = "Unauthorized. Are the headers correct?"), })
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<?> post(@ApiParam(value = "ProductProcessTemplate object", required = true)@Valid @RequestBody ProductProcessTemplate productProcessTemplate, 
-			@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = true) String bearerToken) {
-		
+	public ResponseEntity<?> post(@ApiParam(value = "ProductProcessTemplate object", required = true)@Valid @RequestBody ProductProcessTemplate productProcessTemplate,
+			@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = false) String bearerToken) {
+
 		// Check NIMBLE authorization
 		String userPartyID = authorizationSrv.checkToken(bearerToken);
 		if (userPartyID == null) {
 			return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
 		}
-		
+
 		//TODO: Permission check. Return error, in case no permission.
 
 		log.info(" Production Process Template Json Document Capture Started.... ");
@@ -70,10 +71,10 @@ public class JSONProductionProcTemplateCapture {
 		Gson gson = new Gson();
 	    String productProcessTemplateJson = gson.toJson(productProcessTemplate);
 		JSONObject jsonProductionProc = new JSONObject(productProcessTemplateJson);
-		
+
 		MongoCaptureUtil m = new MongoCaptureUtil();
 		m.captureJSONProductionProcTemplate(jsonProductionProc, userPartyID);
-		
+
 		return new ResponseEntity<>("Production Process Template Document : Captured ", HttpStatus.OK);
 
 	}

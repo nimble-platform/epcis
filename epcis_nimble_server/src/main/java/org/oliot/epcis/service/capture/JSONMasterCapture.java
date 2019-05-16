@@ -28,30 +28,30 @@ import org.springframework.web.bind.annotation.*;
 @Api(tags = {"EPCIS JSON Master Data Capture"})
 @CrossOrigin()
 @RestController
-@RequestMapping("/JSONMasterCapture")
+@RequestMapping("/Service/JSONMasterCapture")
 public class JSONMasterCapture {
     private static Logger log = LoggerFactory.getLogger(JSONMasterCapture.class);
 
     @Autowired
     AuthorizationSrv authorizationSrv;
 
-	@ApiOperation(value = "", notes = "Capture an EPCIS Master Data in JSON. An example EPCIS Master Data is: <br><textarea disabled style=\"width:98%\" class=\"body-textarea\">" + 
-			" {\r\n" + 
-			"    \"epcismd\": {\r\n" + 
-			"        \"EPCISBody\": {\r\n" + 
-			"            \"VocabularyList\": [\r\n" + 
-			"                {\r\n" + 
-			"                    \"Vocabulary\": {\r\n" + 
-			"                        \"id\": \"202\",\r\n" + 
-			"                        \"type\": \"urn:epcglobal:epcis:vtype:SubSiteAttribute\",\r\n" + 
-			"                        \"attributes\": {\r\n" + 
-			"                            \"urn:epcglobal:cbv:mda#description\": \"Storage Area\"\r\n" + 
-			"                        }\r\n" + 
-			"                    }\r\n" + 
-			"                }\r\n" + 
-			"            ]\r\n" + 
-			"        }\r\n" + 
-			"    }\r\n" + 
+	@ApiOperation(value = "", notes = "Capture an EPCIS Master Data in JSON. An example EPCIS Master Data is: <br><textarea disabled style=\"width:98%\" class=\"body-textarea\">" +
+			" {\r\n" +
+			"    \"epcismd\": {\r\n" +
+			"        \"EPCISBody\": {\r\n" +
+			"            \"VocabularyList\": [\r\n" +
+			"                {\r\n" +
+			"                    \"Vocabulary\": {\r\n" +
+			"                        \"id\": \"202\",\r\n" +
+			"                        \"type\": \"urn:epcglobal:epcis:vtype:SubSiteAttribute\",\r\n" +
+			"                        \"attributes\": {\r\n" +
+			"                            \"urn:epcglobal:cbv:mda#description\": \"Storage Area\"\r\n" +
+			"                        }\r\n" +
+			"                    }\r\n" +
+			"                }\r\n" +
+			"            ]\r\n" +
+			"        }\r\n" +
+			"    }\r\n" +
 			"}"
 			+ " </textarea>", response = String.class)
 	@ApiImplicitParam(name = "inputString", value = "A JSON value representing EPCIS Master Data.", dataType = "String", paramType = "body", required = true)
@@ -61,7 +61,7 @@ public class JSONMasterCapture {
     @RequestMapping(method = RequestMethod.POST)
     @ResponseBody
     public ResponseEntity<?> post(@RequestBody String inputString,
-    		@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = true) String bearerToken
+    		@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = false) String bearerToken
                                 ) {
 
         // Check NIMBLE authorization

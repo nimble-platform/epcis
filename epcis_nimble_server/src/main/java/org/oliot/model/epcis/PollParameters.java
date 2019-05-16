@@ -80,6 +80,7 @@ public class PollParameters {
 	@ApiModelProperty(notes = "Format of experted result. Either JSON or XML",  example = "JSON", required = true)	
 	@NotBlank
 	private String format;
+	private String masterDataFormat;
 	private Map<String, String> params;
 
 	public static BsonDocument asBsonDocument(PollParameters p) {
@@ -832,7 +833,7 @@ public class PollParameters {
 			String EQ_errorReason, String EQ_correctiveEventID, String orderBy, String orderDirection,
 			Integer eventCountLimit, Integer maxEventCount, String vocabularyName, Boolean includeAttributes,
 			Boolean includeChildren, String attributeNames, String EQ_name, String WD_name, String HASATTR,
-			Integer maxElementCount, String format, Map<String, String> params) {
+			Integer maxElementCount, String format, String masterDataFormat, Map<String, String> params) {
 		this.queryName = queryName;
 		this.eventType = eventType;
 		this.GE_eventTime = GE_eventTime;
@@ -882,6 +883,7 @@ public class PollParameters {
 		this.HASATTR = HASATTR;
 		this.maxElementCount = maxElementCount;
 		this.format = format;
+		this.masterDataFormat = masterDataFormat;
 		this.params = params;
 	}
 
@@ -1275,6 +1277,14 @@ public class PollParameters {
 
 	public void setFormat(String format) {
 		this.format = format;
+	}
+
+	public String getMasterDataFormat() {
+		return masterDataFormat;
+	}
+
+	public void setMasterDataFormat(String format) {
+		this.masterDataFormat = format;
 	}
 
 	public Map<String, String> getParams() {

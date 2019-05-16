@@ -38,11 +38,11 @@ import springfox.documentation.annotations.ApiIgnore;
  * Service (EPCIS) v1.2.
  *
  * @author Jaewook Byun, Ph.D student
- * 
+ *
  *         Korea Advanced Institute of Science and Technology (KAIST)
- * 
+ *
  *         Real-time Embedded System Laboratory(RESL)
- * 
+ *
  *         bjw0829@kaist.ac.kr, bjw0829@gmail.com
  */
 
@@ -54,46 +54,46 @@ import springfox.documentation.annotations.ApiIgnore;
 //@Api
 @CrossOrigin()
 @RestController
-@RequestMapping("/EventCapture")
+@RequestMapping("/Service/EventCapture")
 public class EventCapture {
     private static Logger log = LoggerFactory.getLogger(EventCapture.class);
 
 	@Autowired
 	AuthorizationSrv authorizationSrv;
-	
+
 	@Autowired
 	CaptureService 	captureService;
 
 	/**
-	 * 
+	 *
 	 * @param inputString
-	 * @param accessToken 
-	 * @param gcpLength Global Company Prefix(GCP) length. 
+	 * @param accessToken
+	 * @param gcpLength Global Company Prefix(GCP) length.
 	 * @return
 	 */
-	@ApiOperation(value = "", notes = "Capture an EPCIS Event in XML. An example EPCIS Event is: <br><textarea disabled style=\"width:98%\" class=\"body-textarea\">" 
-			+ " \r\n" + 
-			"<epcis:EPCISDocument xmlns:epcis=\"urn:epcglobal:epcis:xsd:1\"\r\n" + 
-			"	creationDate=\"2005-07-11T11:30:47.0Z\" schemaVersion=\"1.2\">\r\n" + 
-			"	<EPCISBody>\r\n" + 
-			"		<EventList>\r\n" + 
-			"			<ObjectEvent>\r\n" + 
-			"				<eventTime>2018-04-03T20:33:31.116-06:00</eventTime>\r\n" + 
-			"				<eventTimeZoneOffset>-06:00</eventTimeZoneOffset>\r\n" + 
-			"				<epcList>\r\n" + 
-			"					<epc>urn:epc:id:sgtin:0614141.lindback.20173</epc>\r\n" + 
-			"				</epcList>\r\n" + 
-			"				<action>OBSERVE</action>\r\n" + 
-			"				<bizStep>urn:epcglobal:cbv:bizstep:other</bizStep>\r\n" + 
-			"				<readPoint>\r\n" + 
-			"					<id>urn:epc:id:sgln:readPoint.lindbacks.1</id>\r\n" + 
-			"				</readPoint>\r\n" + 
-			"				<bizLocation>\r\n" + 
-			"					<id>urn:epc:id:sgln:bizLocation.lindbacks.2</id>\r\n" + 
-			"				</bizLocation>\r\n" + 
-			"			</ObjectEvent>\r\n" + 
-			"		</EventList>\r\n" + 
-			"	</EPCISBody>\r\n" + 
+	@ApiOperation(value = "", notes = "Capture an EPCIS Event in XML. An example EPCIS Event is: <br><textarea disabled style=\"width:98%\" class=\"body-textarea\">"
+			+ " \r\n" +
+			"<epcis:EPCISDocument xmlns:epcis=\"urn:epcglobal:epcis:xsd:1\"\r\n" +
+			"	creationDate=\"2005-07-11T11:30:47.0Z\" schemaVersion=\"1.2\">\r\n" +
+			"	<EPCISBody>\r\n" +
+			"		<EventList>\r\n" +
+			"			<ObjectEvent>\r\n" +
+			"				<eventTime>2018-04-03T20:33:31.116-06:00</eventTime>\r\n" +
+			"				<eventTimeZoneOffset>-06:00</eventTimeZoneOffset>\r\n" +
+			"				<epcList>\r\n" +
+			"					<epc>urn:epc:id:sgtin:0614141.lindback.20173</epc>\r\n" +
+			"				</epcList>\r\n" +
+			"				<action>OBSERVE</action>\r\n" +
+			"				<bizStep>urn:epcglobal:cbv:bizstep:other</bizStep>\r\n" +
+			"				<readPoint>\r\n" +
+			"					<id>urn:epc:id:sgln:readPoint.lindbacks.1</id>\r\n" +
+			"				</readPoint>\r\n" +
+			"				<bizLocation>\r\n" +
+			"					<id>urn:epc:id:sgln:bizLocation.lindbacks.2</id>\r\n" +
+			"				</bizLocation>\r\n" +
+			"			</ObjectEvent>\r\n" +
+			"		</EventList>\r\n" +
+			"	</EPCISBody>\r\n" +
 			"</epcis:EPCISDocument>" + "</textarea>", response = String.class)
 	@ApiImplicitParam(name = "inputString", value = "A XML value representing EPCIS Events.", dataType = "String", paramType = "body", required = true)
 	@ApiResponses(value = { @ApiResponse(code = 200, message = "success"),
@@ -101,8 +101,8 @@ public class EventCapture {
 			@ApiResponse(code = 401, message = "Unauthorized. Are the headers correct?"), })
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseEntity<?> post(@RequestBody String inputString, 
-			@RequestHeader(value="Authorization", required=true) String bearerToken, 
+	public ResponseEntity<?> post(@RequestBody String inputString,
+			@RequestHeader(value="Authorization", required=true) String bearerToken,
 			@ApiParam(value = "Global Company Prefix(GCP) length") @RequestParam(required = false) Integer gcpLength) {
 		JSONObject retMsg = new JSONObject();
 
@@ -138,7 +138,7 @@ public class EventCapture {
 		}
 
 		retMsg = captureService.capture(epcisDocument, userPartyID, gcpLength);
-		
+
 
 		if (retMsg.isNull("error") == true)
 		{

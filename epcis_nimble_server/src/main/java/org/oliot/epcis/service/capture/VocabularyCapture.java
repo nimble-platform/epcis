@@ -53,7 +53,7 @@ import io.swagger.annotations.ApiResponses;
 @Api(tags = {"EPCIS XML Master Data Capture"})
 @CrossOrigin()
 @RestController
-@RequestMapping("/VocabularyCapture")
+@RequestMapping("/Service/VocabularyCapture")
 public class VocabularyCapture {
     private static Logger log = LoggerFactory.getLogger(VocabularyCapture.class);
 

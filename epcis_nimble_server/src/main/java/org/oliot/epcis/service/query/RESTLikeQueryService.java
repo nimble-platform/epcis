@@ -177,7 +177,7 @@ public class RESTLikeQueryService extends BaseRestController {
 	@RequestMapping(value = "/GetProductionProcessTemplate/{productClass}", method = RequestMethod.GET)
 	@ResponseBody
     public ResponseEntity<?> getProductionProcessTemplate(@ApiParam(value = "Product Categoy ID in NIMBLE Platform", required = true)  @PathVariable String productClass, 
-    		@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = true)  String bearerToken) 
+    		@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = false)  String bearerToken)
     		throws IOException, QueryTooLargeException, QueryParameterException {
 		
 		// Check NIMBLE authorization
@@ -263,7 +263,7 @@ public class RESTLikeQueryService extends BaseRestController {
 	@RequestMapping(value = "/Poll/{queryName}", method = RequestMethod.GET)
 	@ResponseBody
 	public ResponseEntity<?> poll(@PathVariable String queryName, 
-			@RequestHeader(value="Authorization", required=true) String bearerToken, 
+			@RequestHeader(value="Authorization", required=false) String bearerToken,
 			@RequestParam(required = false) String eventType,
 			@RequestParam(required = false) String GE_eventTime, @RequestParam(required = false) String LT_eventTime,
             @RequestParam(required = false) String GE_masterTime, @RequestParam(required = false) String LE_masterTime,
@@ -303,12 +303,13 @@ public class RESTLikeQueryService extends BaseRestController {
 			@RequestParam(required = false) Integer maxElementCount,
 
 			@RequestParam(required = false) String format,
-			@RequestParam Map<String, String> params)
+		    @RequestParam(required = false) String masterDataFormat,
+		    @RequestParam Map<String, String> params)
 			throws QueryParameterException, QueryTooLargeException, QueryTooComplexException, NoSuchNameException,
 			SecurityException, ValidationException, ImplementationException {
 
 		HttpHeaders responseHeaders = new HttpHeaders();
-		if (format != null && format.equals("JSON")) {
+		if ((format != null && format.equals("JSON")) || (masterDataFormat != null && masterDataFormat.equals("JSON"))) {
 			responseHeaders.add("Content-Type", "application/json; charset=utf-8");
 		} else {
 			responseHeaders.add("Content-Type", "application/xml; charset=utf-8");
@@ -329,7 +330,7 @@ public class RESTLikeQueryService extends BaseRestController {
                 EXISTS_errorDeclaration, GE_errorDeclarationTime, LT_errorDeclarationTime, EQ_errorReason,
                 EQ_correctiveEventID, orderBy, orderDirection, eventCountLimit, maxEventCount, vocabularyName,
                 includeAttributes, includeChildren, attributeNames, EQ_name, WD_name, HASATTR, maxElementCount, format,
-                 params);
+                 masterDataFormat, params);
 
 		String result = mongoQueryService.poll(pollParams, userPartyID);
 		return new ResponseEntity<>(result, responseHeaders, HttpStatus.OK);
@@ -343,7 +344,7 @@ public class RESTLikeQueryService extends BaseRestController {
 	@ResponseBody
 	public ResponseEntity<?> poll(@ApiParam(value = "Available query names. i.e. SimpleEventQuery, SimpleMasterDataQuery.", allowableValues = "SimpleEventQuery,SimpleMasterDataQuery", 
 	example = "SimpleEventQuery", required = true) @PathVariable String queryName, 
-			@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = true) String bearerToken, 
+			@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = false) String bearerToken,
 			@ApiParam(value = "Query Params according to the EPCIS Standard 1.2. "
 					+ "A QueryParams instance is simply a set of name/value pairs, where the names correspond to parameter names defined by the query, "
 					+ "and the values are the specific values to be used for that invocation of (poll) or subscription to (subscribe) the query. "

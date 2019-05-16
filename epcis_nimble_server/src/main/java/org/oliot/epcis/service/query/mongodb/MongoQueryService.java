@@ -407,9 +407,9 @@ public class MongoQueryService {
 		EPCISQueryDocumentType epcisQueryDocumentType = null;
 		JSONArray retArray = new JSONArray();
 
-        if (p.getFormat() == null || p.getFormat().equals("XML")) {
+        if (p.getMasterDataFormat() == null || p.getMasterDataFormat().equals("XML")) {
 			epcisQueryDocumentType = makeBaseResultDocument(p.getQueryName());
-        } else if (p.getFormat().equals("JSON")) {
+        } else if (p.getMasterDataFormat().equals("JSON")) {
 			// Do Nothing
 		} else {
 			throw new QueryParameterException();
@@ -448,7 +448,7 @@ public class MongoQueryService {
 		while (slCursor.hasNext()) {
 			BsonDocument dbObject = slCursor.next();
 
-            if (p.getFormat() == null || p.getFormat().equals("XML")) {
+            if (p.getMasterDataFormat() == null || p.getMasterDataFormat().equals("XML")) {
 				MasterDataReadConverter con = new MasterDataReadConverter();
 				VocabularyType vt = con.convert(dbObject);
 
@@ -484,7 +484,6 @@ public class MongoQueryService {
 				}
 				vList.add(vt);
 			} else {
-				dbObject.remove("_id");
 				if (p.getIncludeAttributes() == false) {
 					dbObject.remove("attributes");
 				} else if (p.getIncludeAttributes() == true && p.getAttributeNames() != null) {
@@ -515,7 +514,7 @@ public class MongoQueryService {
 
 		}
 
-        if (p.getFormat() == null || p.getFormat().equals("XML")) {
+        if (p.getMasterDataFormat() == null || p.getMasterDataFormat().equals("XML")) {
 			QueryResultsBody qbt = epcisQueryDocumentType.getEPCISBody().getQueryResults().getResultsBody();
 
 			VocabularyListType vlt = new VocabularyListType();
@@ -545,7 +544,7 @@ public class MongoQueryService {
 
 			}
 		}
-        if (p.getFormat() == null || p.getFormat().equals("XML")) {
+        if (p.getMasterDataFormat() == null || p.getMasterDataFormat().equals("XML")) {
 			StringWriter sw = new StringWriter();
 			JAXB.marshal(epcisQueryDocumentType, sw);
 			return sw.toString();
@@ -894,7 +893,9 @@ public class MongoQueryService {
             } catch (NumberFormatException nfe) {
                 log.error(nfe.toString());
             }
-        }
+        } else {
+			cursor = cursor.sort(Sorts.descending("_id"));
+		}
 
         return cursor;
     }

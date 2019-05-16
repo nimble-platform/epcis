@@ -54,7 +54,7 @@ public class DocumentValidator implements ServletContextAware {
 		this.servletContext = servletContext;
 	}
 
-	@RequestMapping(value = "/EPCISDocumentValidation", method = RequestMethod.POST)
+	@RequestMapping(value = "/Service/EPCISDocumentValidation", method = RequestMethod.POST)
 	@ResponseBody
 	public ResponseEntity<?> validateEpcisDocument(@RequestBody String inputString) {
 		JSONObject retJSON = new JSONObject();
@@ -97,7 +97,7 @@ public class DocumentValidator implements ServletContextAware {
 		}
 	}
 
-	@RequestMapping(value = "/EPCISMasterDataDocumentValidation", method = RequestMethod.POST)
+	@RequestMapping(value = "/Service/EPCISMasterDataDocumentValidation", method = RequestMethod.POST)
 	@ResponseBody
 	public ResponseEntity<?> validateEpcisMasterDataDocument(@RequestBody String inputString) {
 		JSONObject retJSON = new JSONObject();
