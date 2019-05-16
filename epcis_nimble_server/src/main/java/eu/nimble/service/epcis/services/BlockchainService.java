@@ -27,51 +27,72 @@ public class BlockchainService {
      * @param senderPartyID
      * @return the prepared information as JSONObject
      */
-    public JSONObject buildJSONEventForBC(JSONObject jsonEventObj)
+    public JSONObject buildJSONEventForBC(JSONObject jsonEventObj, String senderPartyID)
     {
         JSONObject jsonEventForBlockchain = new JSONObject();
-        String unifiedJSONStr = this.unifyJsonString(jsonEventObj);
+
+        JSONObject unifiedJsonFields = this.unifyJsonObjFields(jsonEventObj);
+        String unifiedJSONStr = this.unifyJsonString(unifiedJsonFields);
         String completeHash = DigestUtils.sha256Hex(unifiedJSONStr);
-        jsonEventForBlockchain.put("completeHash", completeHash);
+        jsonEventForBlockchain.put("hash", completeHash);
 
         List<String> productIDs = this.extractProductIDsFromEvent(jsonEventObj);
-        //JSONArray epcArray = new JSONArray(productIDs);
-        JSONArray epcArray = new JSONArray();
-        for (String productID : productIDs) {
-            JSONObject epcJson = new JSONObject();
-            epcJson.put("epc", productID);
-            epcArray.put(epcJson);
-        }
+        JSONArray epcArray = new JSONArray(productIDs);
         jsonEventForBlockchain.put("epcList", epcArray);
 
-        jsonEventForBlockchain.put("EventData", jsonEventObj);
+        JSONObject dataHeaderField = new JSONObject();
+        if(senderPartyID != null)
+        {
+            dataHeaderField.put("senderPartyID", senderPartyID);
+        }
+        JSONArray shortHashArray = new JSONArray();
+        List<JSONObject> primEventList = this.getPrimitiveEventDataForAllProductIDs(jsonEventObj);
+        for (JSONObject primEvent : primEventList) {
+            JSONObject shortHash = new JSONObject();
+            String unifiedPrimJSONStr = this.unifyJsonString(primEvent);
+            String shortHashVal = DigestUtils.sha256Hex(unifiedPrimJSONStr);
+            shortHash.put("hash", shortHashVal);
+            shortHashArray.put(shortHash);
+        }
+        dataHeaderField.put("shortHashForEPCList", shortHashArray);
+        JSONObject completetHashJsonObj = new JSONObject();
+        completetHashJsonObj.put("hash", completeHash);
+        dataHeaderField.put("completeHash", completetHashJsonObj);
 
+        JSONObject dataField = new JSONObject();
+        dataField.put("header", dataHeaderField);
+        dataField.put("EventData", jsonEventObj);
+        jsonEventForBlockchain.put("data", dataField);
+
+        System.out.print("unifiedJSONStr: " + unifiedJSONStr + "\n");
+        System.out.print("completeHash: " + completeHash + "\n");
         return jsonEventForBlockchain;
     }
 
+
     /**
-     * Get a list of basic JSON events. Each product id in the given JSON event will has one respective basic JSON event.
-     * Each basic Json Event has four dimensions:
+     * Get a list of primitive JSON events. Each product id in the given JSON event will has one respective primitive JSON event.
+     * Each primitive Json Event has four dimensions:
      * WHAT fields: the product id
      * WHEN fields:	 eventTimeZoneOffset, eventTime
      * WHERE fields: bizLocation, readPoint
-     * WHY fields: bizStep, disposition
+     * WHY fields: bizStep
      * @param jsonEventObj original JSON event
-     * @return a list of basic JSON events
+     * @return a list of primitive JSON events
      */
-    public List<JSONObject> getBasicEventDataForAllProductIDs(JSONObject jsonEventObj)
+    private List<JSONObject> getPrimitiveEventDataForAllProductIDs(JSONObject jsonEventObj)
     {
-        List<JSONObject> basicEvents = new ArrayList<JSONObject>();
+        List<JSONObject> primitiveEvents = new ArrayList<JSONObject>();
 
         List<String> productIDs = this.extractProductIDsFromEvent(jsonEventObj);
-        JSONObject dimensionData = this.getEventBasicData(jsonEventObj);
+        JSONObject dimensionData = this.getEventPrimitiveData(jsonEventObj);
         for (String productID : productIDs) {
             JSONObject basicEventData = dimensionData;
             basicEventData.put("productID", productID);
-            basicEvents.add(basicEventData);
+            primitiveEvents.add(basicEventData);
         }
 
-        return basicEvents;
+        return primitiveEvents;
     }
 
     /**
@@ -80,8 +101,12 @@ public class BlockchainService {
      * @param jsonObj
      * @return any product ID in the form of EPC and EPC Class
      */
-    public List<String> extractProductIDsFromEvent(JSONObject jsonObj) {
+    private List<String> extractProductIDsFromEvent(JSONObject jsonObj) {
         List<String> productIDs = new ArrayList<String>();
+
+//		List<String> MATCH_anyEPCAndEPCClass = Arrays.asList(new String[]{ "epcList.epc", "childEPCs.epc",
+//				"inputEPCList.epc", "outputEPCList.epc", "parentID", "extension.quantityList.epcClass", "extension.childQuantityList.epcClass",
+//				"inputQuantityList.epcClass", "outputQuantityList.epcClass" });
 
         List<String> MATCH_anyEPCAndEPCClassPath = Arrays
                 .asList(new String[] { "$..parentID", "$..epc", "$..epcClass" });
@@ -100,6 +125,31 @@ public class BlockchainService {
     }
 
     /**
+     * Standardize JSON fields, that will be used for hash calculation.
+     * Remove the JSON fields, that may be changed after transfer to another data storage.
+
+     * Without a unified JSON format i.e. fields, it is not possible to compare hash code for verification in Blockchain.
+     * @param jsonObj
+     * @return JSON Event with a unified JSON fields
+     */
+    private JSONObject unifyJsonObjFields(JSONObject jsonObj)
+    {
+        // Shallow copy
+        JSONObject unifiedJsonObj = new JSONObject(jsonObj, JSONObject.getNames(jsonObj));
+
+        // When company calculate hash, or send event data to Block-chain and local data storage,
+        // the fields "_id", "userPartyID", "recordTime" are not included.
+        List<String> removableFields =  Arrays.asList(new String[] { "_id", "userPartyID", "recordTime" });;
+
+        for(String removableField : removableFields)
+        {
+            unifiedJsonObj.remove(removableField);
+        }
+
+        return unifiedJsonObj;
+    }
+
+    /**
      * Unify string representation of a JSON Event Object, in order to have same hash code for identical JSON objects.
      *
      * It can often happen, that identical JSON objects are presented as different strings. It will lead to different hash codes.
@@ -113,7 +163,7 @@ public class BlockchainService {
      * @param jsonObj JSON Event Object.
      * @return unified string representation.
      */
-    public String unifyJsonString(JSONObject jsonObj)
+    private String unifyJsonString(JSONObject jsonObj)
     {
         Map<String, Object> flattenJson = JsonFlattener.flattenAsMap(jsonObj.toString());
 
@@ -139,7 +189,7 @@ public class BlockchainService {
      * @param jsonObj
      * @return
      */
-    public JSONObject getEventBasicData(JSONObject jsonObj) {
+    private JSONObject getEventPrimitiveData(JSONObject jsonObj) {
         JSONObject basicJson = new JSONObject();
 
         List<String> basicFields = Arrays.asList(new String[] { "eventTimeZoneOffset", "eventTime", "bizLocation",
@@ -175,9 +225,8 @@ public class BlockchainService {
         String content2 = bcSrv.getFileWithUtil(filename2);
         JSONObject jsonObj2 = new JSONObject(content2);
 
-        String unifiedStr1 = bcSrv.unifyJsonString(jsonObj1);
-        String unifiedStr2 = bcSrv.unifyJsonString(jsonObj2);
+        JSONObject jsonObjForBC = bcSrv.buildJSONEventForBC(jsonObj2, "1477");
 
-        System.out.print("equal: " + unifiedStr1.equals(unifiedStr2));
+        System.out.print(jsonObjForBC.toString());
     }
 }

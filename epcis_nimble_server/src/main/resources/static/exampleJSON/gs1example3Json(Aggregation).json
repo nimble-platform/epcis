@@ -29,7 +29,7 @@
                             "childQuantityList": [
                                 {
                                     "epcClass": "urn:epc:idpat:sgtin:4012345.098765.*",
-                                    "quantity": 10
+                                    "quantity": 10.5
                                 },
                                 {
                                     "epcClass": "urn:epc:class:lgtin:4012345.012345.998877",

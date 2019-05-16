@@ -5,6 +5,7 @@ import eu.nimble.service.epcis.services.BlockchainService;
 import eu.nimble.service.epcis.services.NIMBLETokenService;
 import org.json.JSONObject;
 import org.oliot.epcis.service.capture.JSONEventCaptureService;
+import org.oliot.model.epcis.NIMBLEUserInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +51,12 @@ public class JSONEventCaptureWrapper extends BaseRestController {
 
         JSONEventCaptureService jsonEventCaptureSrv = new JSONEventCaptureService();
 
+//String[] beanArray = applicationContext.getBeanDefinitionNames();
+//
+//		for(String s : beanArray) {
+//			System.out.println(s);
+//		}
+
         List<JSONObject> validJsonEventList = jsonEventCaptureSrv.prepareJSONEvents(inputString);
         if (null == validJsonEventList) {
             log.info("No Events Captured!");
@@ -61,16 +68,26 @@ public class JSONEventCaptureWrapper extends BaseRestController {
         log.info("Capture Events into company local storage.... ");
         jsonEventCaptureSrv.capturePreparedJSONEvents(validJsonEventList, userID);
 
-        // Remote NIMBLE Server Capture
+        // Login into NIMBLE for replication
+        NIMBLEUserInfo nimbleUser = nimbleTokenService.loginNIMBLE();
+        if (null == nimbleUser) {
+            String msg = "Fail to replicate EPCIS event to NIMBLE platform and Blockchain, because failed to authorize the user with given name and password!";
+            log.error(msg);
+            return new ResponseEntity<>(msg, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        String bearerToken = nimbleUser.getBearerToken();
+        String userPartyID = nimbleUser.getUserPartyID();
+
+        // Replicate to Remote NIMBLE Server
         boolean remoteCaptureSuccess = true;
         if (remoteNIMBLEEPCISEnabled) {
-            remoteCaptureSuccess = this.replicateRemoteEPCIS(inputString);
+            remoteCaptureSuccess = this.replicateRemoteEPCIS(inputString, bearerToken);
         }
 
-        // Blockchain Capture
+        // Replicate to Blockchain
         boolean blockchainCaptureSuccess = true;
         if (blockchainEnabled) {
-            blockchainCaptureSuccess = this.replicateBlockChain(validJsonEventList);
+            blockchainCaptureSuccess = this.replicateBlockChain(validJsonEventList, userPartyID);
         }
 
         String responseMsg = "EPCIS Json event captured: " + validJsonEventList.size();
@@ -93,24 +110,24 @@ public class JSONEventCaptureWrapper extends BaseRestController {
      * @param validJsonEventList
      * @return true, on success; false, otherwise
      */
-    private boolean replicateBlockChain(List<JSONObject> validJsonEventList) {
+    private boolean replicateBlockChain(List<JSONObject> validJsonEventList, String userPartyID) {
         boolean success = true;
 
         String eventCaptureURL = blockchainURL;
 
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
         try {
             for (JSONObject jsonObj : validJsonEventList) {
-                JSONObject jsonObjForBlockchain = blockchainService.buildJSONEventForBC(jsonObj);
-
-                HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.APPLICATION_JSON);
+                JSONObject jsonObjForBlockchain = blockchainService.buildJSONEventForBC(jsonObj, userPartyID);
 
                 HttpEntity<String> entity = new HttpEntity<String>(jsonObjForBlockchain.toString(), headers);
 
                 restTemplate.exchange(eventCaptureURL, HttpMethod.POST, entity, String.class);
             }
 
-            log.info("Captured Events into Blockchain: " + validJsonEventList.size());
+           log.info("Captured Events into Blockchain: " + validJsonEventList.size());
 
         } catch (HttpStatusCodeException e) {
             log.error(
@@ -121,23 +138,17 @@ public class JSONEventCaptureWrapper extends BaseRestController {
         return success;
     }
 
+
     /**
      * Replicate the json events string into remote NIMBLE EPCIS server
      *
      * @param inputString
      * @return true, on success; false, otherwise
      */
-    private boolean replicateRemoteEPCIS(String inputString) {
+    private boolean replicateRemoteEPCIS(String inputString, String bearerToken) {
         boolean success = true;
 
         String jsonCaptureURL = remoteNIMBLEEPCISURL + "JSONEventCapture";
-
-        String bearerToken = nimbleTokenService.getBearerToken();
-        if (null == bearerToken) {
-           log.error(
-                    "Fail to send EPCIS event to NIMBLE platform because failed to authorize the user with given name and password!");
-            return false;
-        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -147,10 +158,10 @@ public class JSONEventCaptureWrapper extends BaseRestController {
         try {
             restTemplate.exchange(jsonCaptureURL, HttpMethod.POST, entity, String.class);
 
-            log.info("Captured Events into NIMBLE Server. ");
+           log.info("Captured Events into NIMBLE Server. ");
 
         } catch (HttpStatusCodeException e) {
-           log.error(
+            log.error(
                     "Received error during replicate json events into NIMBLE platform: " + e.getResponseBodyAsString());
             success = false;
         }

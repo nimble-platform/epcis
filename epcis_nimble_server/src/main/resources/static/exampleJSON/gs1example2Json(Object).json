@@ -21,7 +21,7 @@
                             "quantityList": [
                                 {
                                     "epcClass": "urn:epc:class:lgtin:4012345.012345.998877",
-                                    "quantity": 200,
+                                    "quantity": 200.0,
                                     "uom": "KGM"
                                 }
                             ],

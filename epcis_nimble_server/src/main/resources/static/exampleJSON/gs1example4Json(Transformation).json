@@ -38,16 +38,16 @@
                         "inputQuantityList": [
                             {
                                 "epcClass": "urn:epc:class:lgtin:4012345.011111.4444",
-                                "quantity": 10,
+                                "quantity": 10.0,
                                 "uom": "KGM"
                             },
                             {
                                 "epcClass": "urn:epc:class:lgtin:0614141.077777.987",
-                                "quantity": 30
+                                "quantity": 30.0
                             },
                             {
                                 "epcClass": "urn:epc:idpat:sgtin:4012345.066666.*",
-                                "quantity": 220
+                                "quantity": 220.0
                             }
                         ],
                         "ilmd": {
