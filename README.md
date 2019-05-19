@@ -19,7 +19,7 @@
 
 ### Run with Docker ###
 
-> Run 'docker run -d -e EPCIS_DB_HOST_URL="mongodb://localhost:27017/" nimbleplatform/epcis:0.0.4' for running the docker image. In default, the local mongoDB "mongodb://localhost:27017/" is used for managing epcis data. When another MongoDB is in use, the enviornment variable EPCIS_DB_HOST_URL should be updated. 
+> Run 'docker run -d -e EPCIS_DB_URL="mongodb://localhost:27017/" nimbleplatform/epcis:0.0.4' for running the docker image. In default, the local mongoDB "mongodb://localhost:27017/" is used for managing epcis data. When another MongoDB is in use, the enviornment variable EPCIS_DB_HOST_URL should be updated. 
 
 ### Quick Test ###
 > When it works properly, http://localhost:8080/greeting will return a greeting string.

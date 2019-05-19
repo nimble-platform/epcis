@@ -4,13 +4,28 @@ build:
   version: '@project.version@'
 server:
   max-http-header-size: 1048576
-  servlet-path: /Service/*
-  port: 8080
+  #servlet-path: /Service/*
+  port: ${PORT:8080}
 #  tomcat:
 #    max-connections: 3000
 #    max-http-post-size: 1048576
 #    max-threads: 1000
 spring:
+  application:
+    # the name of the application represents the global identifier of this microservice.
+    name: epcis-company-service
+  cloud:
+    config:
+      uri: ${CONFIG_SERVER_URI:http://localhost:8888}
+      # failFast is disabled per default, so that the service can start standalone without config server.
+      # failFast should be enabled in production environments.
+      # it can be set via an environment variable or the config server
+      failFast: ${CONFIG_SERVER_FAILFAST:false}
+    discovery:
+      # by disabling the service discovery the application/service can be started in "standalone mode".
+      # service discovery is disabled by default and should be enabled (set to true) for the "cloud mode".
+      # it can be set via an environment variable or the config server
+      enabled: ${discovery.enabled:${DISCOVERY_ENABLED:false}}
   jackson:
     date-format: com.fasterxml.jackson.databind.util.ISO8601DateFormat
     serialization:
@@ -25,7 +40,7 @@ spring:
       ssl: ${EPCIS_DB_SSL:false}
       uri: ${EPCIS_DB_URL:mongodb://localhost:27017/} 
   identity-service:
-    url: http://${IDENTITY_SRV_HOST:nimble-staging.salzburgresearch.at}:${IDENTITY_SRV_PORT:80}/identity      
+    url: ${IDENTITY_SERVER_URI:http://nimble-staging.salzburgresearch.at:80/identity}
 springfox:
   documentation:
     swagger:
@@ -36,5 +51,3 @@ nimble:
 epcis:
   capture:
     verification: true   
-
- 

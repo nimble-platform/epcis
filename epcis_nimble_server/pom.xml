@@ -6,7 +6,7 @@
 	<groupId>eu.nimble.services</groupId>
 	<artifactId>epcis</artifactId>
 	<packaging>jar</packaging>
-	<version>0.0.4</version>
+	<version>eco.company.0.2</version>
 	<name>epcis REST Services</name>
 	<url>http://maven.apache.org</url>
 
