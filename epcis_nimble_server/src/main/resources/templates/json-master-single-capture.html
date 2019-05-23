@@ -229,6 +229,11 @@
 
             var masterData = getMasterDataJsonFormat(vocabulary);
             masterDataCaptureUrl = 'http://' + location.host + '/Service/JSONMasterCapture';
+            $.ajaxSetup({
+                headers:{
+                    'Authorization': "biba"
+                }
+            });
             $.ajax({
                 type: "POST",
                 url: masterDataCaptureUrl,
@@ -283,6 +288,11 @@
         var getMasterDataUrl = "http://" + location.host + "/Service/Poll/SimpleMasterDataQuery?includeAttributes=true&includeChildren=true&masterDataFormat=JSON";
         function getMasterData(url) {
             $("#attributeListBody").html('');
+            $.ajaxSetup({
+                headers:{
+                    'Authorization': "biba"
+                }
+            });
             $.getJSON( url, function( data ) {
                 $.each( data, function( key, val ) {
                     $("#attributeListBody").append(getAttributeItem(val));
@@ -295,6 +305,11 @@
         $(document).on("click", "#getMasterDataItemInfo", function (event) {
             var itemID = $(this).parent().next().next().next().next().text();
             $("#masterDataItemInfoModalBody").empty();
+            $.ajaxSetup({
+                headers:{
+                    'Authorization': "biba"
+                }
+            });
             $.ajax({
                 url: getMasterDataItemUrl,
                 type: "GET", //send it through get method
@@ -393,6 +408,11 @@
         $(document).on("click", "#updateMasterDataItemInfo", function (event) {
             var itemID = $(this).parent().next().next().next().next().text();
             $("#masterDataItemInfoUpdateModalBody").empty();
+            $.ajaxSetup({
+                headers:{
+                    'Authorization': "biba"
+                }
+            });
             $.ajax({
                 url: getMasterDataItemUrl,
                 type: "GET", //send it through get method
@@ -530,6 +550,11 @@
 
             var masterData = getMasterDataJsonFormat(vocabulary);
             masterDataCaptureUrl = 'http://' + location.host + '/Service/JSONMasterCapture';
+            $.ajaxSetup({
+                headers:{
+                    'Authorization': "biba"
+                }
+            });
             $.ajax({
                 type: "POST",
                 url: masterDataCaptureUrl,
@@ -621,7 +646,7 @@
                             <li class="active"><a href="#">Master Data</a></li>
                         </ul>
                         <ul class="nav navbar-nav navbar-right">
-                            <li class="btn-success"><a href="/" style="color:white">Back</a></li>
+                            <li class="btn-success"><a href="/home" style="color:white">Back</a></li>
                         </ul>
 
                     </div><!-- /.navbar-collapse -->

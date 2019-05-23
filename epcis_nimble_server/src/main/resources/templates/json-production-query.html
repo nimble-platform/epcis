@@ -11,6 +11,11 @@
 
     function poll() {
         var baseURL = $("#pollBaseURL").val();
+        $.ajaxSetup({
+            headers:{
+                'Authorization': "biba"
+            }
+        });
         $.get(
             baseURL,
             function(ret) {
@@ -70,7 +75,7 @@
             <div id="navbar" class="navbar-collapse collapse">
                 <form class="navbar-form navbar-right">
                     <button type="button" class="btn btn-success"
-                            onclick="movePage('/')">Back</button>
+                            onclick="movePage('/home')">Back</button>
                 </form>
             </div>
 

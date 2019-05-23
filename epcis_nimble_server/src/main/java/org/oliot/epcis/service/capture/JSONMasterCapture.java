@@ -61,7 +61,7 @@ public class JSONMasterCapture {
     @RequestMapping(method = RequestMethod.POST)
     @ResponseBody
     public ResponseEntity<?> post(@RequestBody String inputString,
-    		@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = false) String bearerToken
+    		@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = true) String bearerToken
                                 ) {
 
         // Check NIMBLE authorization

@@ -1,6 +1,7 @@
 package eu.nimble.service.epcis.controller.wrapper;
 
 import eu.nimble.service.epcis.controller.BaseRestController;
+import eu.nimble.service.epcis.services.AuthorizationSrv;
 import eu.nimble.service.epcis.services.NIMBLETokenService;
 import org.json.JSONObject;
 import org.oliot.epcis.service.capture.JSONMasterCaptureService;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
@@ -31,6 +33,9 @@ public class JSONMasterCaptureWrapper extends BaseRestController {
     @Autowired
     JSONMasterCaptureService jsonMasterCaptureService;
 
+    @Autowired
+    AuthorizationSrv authorizationSrv;
+
     @Value("${data-replication.remote_nimble_epcis_server.url}")
     public String remoteNIMBLEEPCISURL;
 
@@ -38,7 +43,13 @@ public class JSONMasterCaptureWrapper extends BaseRestController {
     public boolean remoteNIMBLEEPCISEnabled;
 
     @PostMapping("/IntelligentJSONMasterCapture")
-    public ResponseEntity<?> post(@RequestBody String inputString) {
+    public ResponseEntity<?> post(@RequestBody String inputString, @RequestHeader(value = "Authorization", required = true) String token) {
+
+        // Check NIMBLE authorization
+        String userID = authorizationSrv.checkToken(token);
+        if (userID == null) {
+            return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
+        }
         log.info(" EPCIS Json Document Capture Started.... ");
 
         List<JSONObject> validJsonMasterList = jsonMasterCaptureService.prepareJSONMasters(inputString);

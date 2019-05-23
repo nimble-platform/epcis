@@ -1,6 +1,7 @@
 package eu.nimble.service.epcis.controller.wrapper;
 
 import eu.nimble.service.epcis.controller.BaseRestController;
+import eu.nimble.service.epcis.services.AuthorizationSrv;
 import eu.nimble.service.epcis.services.BlockchainService;
 import eu.nimble.service.epcis.services.NIMBLETokenService;
 import org.json.JSONObject;
@@ -11,10 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import java.util.List;
@@ -33,6 +31,9 @@ public class JSONEventCaptureWrapper extends BaseRestController {
     @Autowired
     BlockchainService blockchainService;
 
+    @Autowired
+    AuthorizationSrv authorizationSrv;
+
     @Value("${data-replication.remote_nimble_epcis_server.url}")
     public String remoteNIMBLEEPCISURL;
 
@@ -46,7 +47,14 @@ public class JSONEventCaptureWrapper extends BaseRestController {
     public String blockchainURL;
 
     @PostMapping("/IntelligentJSONEventCapture")
-    public ResponseEntity<?> post(@RequestBody String inputString, @RequestParam(required = false) String userID) {
+    public ResponseEntity<?> post(@RequestBody String inputString,
+                                  @RequestHeader(value = "Authorization", required = true) String token) {
+        // Check NIMBLE authorization
+        String userID = authorizationSrv.checkToken(token);
+        if (userID == null) {
+            return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
+        }
+
         log.info(" EPCIS Json Document Capture Started.... ");
 
         JSONEventCaptureService jsonEventCaptureSrv = new JSONEventCaptureService();

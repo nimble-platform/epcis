@@ -262,8 +262,8 @@ public class RESTLikeQueryService extends BaseRestController {
 	@ApiIgnore
 	@RequestMapping(value = "/Poll/{queryName}", method = RequestMethod.GET)
 	@ResponseBody
-	public ResponseEntity<?> poll(@PathVariable String queryName, 
-			@RequestHeader(value="Authorization", required=false) String bearerToken,
+	public ResponseEntity<?> poll(@PathVariable String queryName,
+			@RequestHeader(value="Authorization", required=true) String bearerToken,
 			@RequestParam(required = false) String eventType,
 			@RequestParam(required = false) String GE_eventTime, @RequestParam(required = false) String LT_eventTime,
             @RequestParam(required = false) String GE_masterTime, @RequestParam(required = false) String LE_masterTime,

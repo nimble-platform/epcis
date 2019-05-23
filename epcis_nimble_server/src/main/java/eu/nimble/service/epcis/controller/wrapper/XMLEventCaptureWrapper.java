@@ -1,6 +1,7 @@
 package eu.nimble.service.epcis.controller.wrapper;
 
 import eu.nimble.service.epcis.controller.BaseRestController;
+import eu.nimble.service.epcis.services.AuthorizationSrv;
 import eu.nimble.service.epcis.services.BlockchainService;
 import eu.nimble.service.epcis.services.NIMBLETokenService;
 import org.bson.BsonDocument;
@@ -16,10 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
@@ -46,6 +44,9 @@ public class XMLEventCaptureWrapper extends BaseRestController {
     @Autowired
     JSONEventCaptureService jsonEventCaptureSrv;
 
+    @Autowired
+    AuthorizationSrv authorizationSrv;
+
     @Value("${data-replication.remote_nimble_epcis_server.url}")
     public String remoteNIMBLEEPCISURL;
 
@@ -59,8 +60,16 @@ public class XMLEventCaptureWrapper extends BaseRestController {
     public String blockchainURL;
 
     @PostMapping("/IntelligentXMLEventCapture")
-    public ResponseEntity<?> post(@RequestBody String inputString, @RequestParam(required = false) String userID,
-                                  @RequestParam(required = false) Integer gcpLength) {
+    public ResponseEntity<?> post(@RequestBody String inputString,
+                                  @RequestParam(required = false) Integer gcpLength,
+                                  @RequestHeader(value = "Authorization", required = true) String token) {
+
+        // Check NIMBLE authorization
+        String userID = authorizationSrv.checkToken(token);
+        if (userID == null) {
+            return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
+        }
+
         log.info(" EPCIS Document Capture Started.... ");
 
         // XSD based Validation

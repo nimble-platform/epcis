@@ -56,7 +56,7 @@ public class JSONProductionProcTemplateCapture {
 	@RequestMapping(method = RequestMethod.POST)
 	@ResponseBody
 	public ResponseEntity<?> post(@ApiParam(value = "ProductProcessTemplate object", required = true)@Valid @RequestBody ProductProcessTemplate productProcessTemplate,
-			@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = false) String bearerToken) {
+			@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = true) String bearerToken) {
 
 		// Check NIMBLE authorization
 		String userPartyID = authorizationSrv.checkToken(bearerToken);

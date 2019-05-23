@@ -35,6 +35,11 @@
                                         var valXMLString = $(
                                             "#xmlTextArea")
                                             .val();
+                                        $.ajaxSetup({
+                                            headers:{
+                                                'Authorization': "biba"
+                                            }
+                                        });
                                         $
                                             .ajax(
                                                 {
@@ -66,6 +71,11 @@
                                                         .fadeIn(
                                                             'slow');
                                                 });
+                                        $.ajaxSetup({
+                                            headers:{
+                                                'Authorization': "biba"
+                                            }
+                                        });
 
                                         $
                                             .ajax(
@@ -124,6 +134,11 @@
                                 "#masterDocValURL").val();
                             var valXMLString = d.originalEvent.clipboardData
                                 .getData('text');
+                            $.ajaxSetup({
+                                headers:{
+                                    'Authorization': "biba"
+                                }
+                            });
 
                             $
                                 .ajax(
@@ -153,6 +168,11 @@
                                             .fadeIn(
                                                 'slow');
                                     });
+                            $.ajaxSetup({
+                                headers:{
+                                    'Authorization': "biba"
+                                }
+                            });
 
                             $
                                 .ajax(
@@ -190,6 +210,11 @@
     function capture() {
         var captureURL = $("#captureURL").val();
         var captureXMLString = $("#xmlTextArea").val();
+        $.ajaxSetup({
+            headers:{
+                'Authorization': "biba"
+            }
+        });
 
         $.ajax({
             type : "POST",
@@ -225,7 +250,7 @@
             <div id="navbar" class="navbar-collapse collapse">
                 <form class="navbar-form navbar-right">
                     <button type="button" class="btn btn-success"
-                            onclick="movePage('/')">Back</button>
+                            onclick="movePage('/home')">Back</button>
                 </form>
             </div>
             <div class="panel-body">
