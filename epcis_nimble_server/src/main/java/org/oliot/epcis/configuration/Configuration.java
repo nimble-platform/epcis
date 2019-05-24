@@ -43,5 +43,5 @@ public class Configuration {
     public void setDatabase(boolean isCaptureVerfificationOn) {
     	Configuration.isCaptureVerfificationOn = isCaptureVerfificationOn;
     }
-    
+
 }
