@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import eu.nimble.service.epcis.controller.NIMBLETokenController;
 
+import javax.servlet.http.HttpSession;
+
 
 /**
  * Created by Quan Deng, 2019
@@ -27,6 +29,12 @@ public class AuthorizationSrv {
 	@Autowired
 	private RestTemplate restTemplate;
 
+	@Value("#{'${credential.accessToken}'.split(',')}")
+	private List<String> accessTokens;
+
+	@Value("#{'${credential.username}'.split(',')}")
+	private List<String> usernames;
+
 	/**
 	 * Extracts the identity from an OpenID Connect token and fetches the associated company from the Identity Service.
 	 *
@@ -36,9 +44,13 @@ public class AuthorizationSrv {
 	@Cacheable(value = "token",sync = true)
 	public String checkToken(String accessToken)
 	{
-		if(accessToken.equals("biba")) {
-			return "verified";
+		for (String accessT : accessTokens) {
+			if (accessT.equals(accessToken)) {
+				Integer userIndex = accessTokens.indexOf(accessT);
+				return usernames.get(userIndex);
+			}
 		}
+
 		return null;
 //		if (accessToken == null) {
 //			log.error("No token is given");

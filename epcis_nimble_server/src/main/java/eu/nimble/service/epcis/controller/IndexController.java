@@ -9,12 +9,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpSession;
-import javax.validation.constraints.Null;
 import java.util.List;
 
 @Controller
@@ -27,34 +25,49 @@ public class IndexController {
     @Value("#{'${credential.password}'.split(',')}")
     private List<String> passwords;
 
+    @Value("#{'${credential.accessToken}'.split(',')}")
+    private List<String> accessTokens;
+
     @Autowired
     HttpSession session;
 
     @GetMapping("/")
     public String main(Model model) {
         model.addAttribute("login", new Login());
+        session.removeAttribute("invalidCredential");
         return "index"; //view
     }
 
     @PostMapping("/")
-    public String login(@Valid @ModelAttribute("login") Login login, BindingResult bindingResult,
-                        @RequestParam(required = true) String userName,
-                        @RequestParam(required = true) String passWord, HttpSession session) {
-
+    public ModelAndView login(@Valid Login login, BindingResult bindingResult, HttpSession session) {
+        ModelAndView modelAndView = new ModelAndView();
         if(bindingResult.hasErrors()) {
-            return "redirect:/";
+            session.removeAttribute("invalidCredential");
+            modelAndView.addObject("login", login);
+            modelAndView.setViewName("index");
+            return modelAndView;
         }
 
+        boolean authenticateUser = false;
+
         for(String username : usernames){
-            if(username.equals(userName)){
-                Integer passwordIndex=usernames.indexOf(username);
-                if(passWord.equals(passwords.get(passwordIndex))) {
-                    session.setAttribute("accessToken", "biba");
-                    return "redirect:/home";
+            if(username.equals(login.getUserName())){
+                Integer userIndex=usernames.indexOf(username);
+                if(login.getPassWord().equals(passwords.get(userIndex))) {
+                    session.setAttribute("accessToken", accessTokens.get(userIndex));
+                    modelAndView.setViewName("home");
+                    authenticateUser = true;
+                    break;
                 }
             }
         }
-        return "redirect:/";
+
+        if(!authenticateUser) {
+            session.setAttribute("invalidCredential", "Username or Password is not correct!");
+            modelAndView.setViewName("index");
+        }
+
+        return modelAndView;
     }
 
     @GetMapping("/home")
@@ -160,7 +173,7 @@ public class IndexController {
     }
 
     private boolean checkAuthentication() {
-        if( session.getAttribute("accessToken") == null || !session.getAttribute("accessToken").equals("biba")) {
+        if( session.getAttribute("accessToken") == null) {
             return false;
         }
         return true;

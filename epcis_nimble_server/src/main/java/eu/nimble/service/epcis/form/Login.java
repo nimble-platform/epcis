@@ -1,14 +1,13 @@
 package eu.nimble.service.epcis.form;
 
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.NotEmpty;
 
 public class Login {
 
-    @NotNull
+    @NotEmpty
     private String userName;
 
-    @NotNull
+    @NotEmpty
     private String passWord;
 
     public String getUserName() {

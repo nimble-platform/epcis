@@ -36,7 +36,7 @@
 </div>
 
 
-<script type="text/javascript" layout:fragment="custom-script">
+<script type="text/javascript" layout:fragment="custom-script" th:inline="javascript">
     /*<![CDATA[*/
     $('document').ready(function(){
         function movePage(page) {
@@ -229,9 +229,10 @@
 
             var masterData = getMasterDataJsonFormat(vocabulary);
             masterDataCaptureUrl = 'http://' + location.host + '/Service/JSONMasterCapture';
+            var accessToken = [[${session.accessToken}]] ;
             $.ajaxSetup({
                 headers:{
-                    'Authorization': "biba"
+                    'Authorization': accessToken
                 }
             });
             $.ajax({
@@ -288,9 +289,10 @@
         var getMasterDataUrl = "http://" + location.host + "/Service/Poll/SimpleMasterDataQuery?includeAttributes=true&includeChildren=true&masterDataFormat=JSON";
         function getMasterData(url) {
             $("#attributeListBody").html('');
+            var accessToken = [[${session.accessToken}]] ;
             $.ajaxSetup({
                 headers:{
-                    'Authorization': "biba"
+                    'Authorization': accessToken
                 }
             });
             $.getJSON( url, function( data ) {
@@ -305,9 +307,10 @@
         $(document).on("click", "#getMasterDataItemInfo", function (event) {
             var itemID = $(this).parent().next().next().next().next().text();
             $("#masterDataItemInfoModalBody").empty();
+            var accessToken = [[${session.accessToken}]] ;
             $.ajaxSetup({
                 headers:{
-                    'Authorization': "biba"
+                    'Authorization': accessToken
                 }
             });
             $.ajax({
@@ -408,9 +411,10 @@
         $(document).on("click", "#updateMasterDataItemInfo", function (event) {
             var itemID = $(this).parent().next().next().next().next().text();
             $("#masterDataItemInfoUpdateModalBody").empty();
+            var accessToken = [[${session.accessToken}]] ;
             $.ajaxSetup({
                 headers:{
-                    'Authorization': "biba"
+                    'Authorization': accessToken
                 }
             });
             $.ajax({
@@ -550,9 +554,10 @@
 
             var masterData = getMasterDataJsonFormat(vocabulary);
             masterDataCaptureUrl = 'http://' + location.host + '/Service/JSONMasterCapture';
+            var accessToken = [[${session.accessToken}]] ;
             $.ajaxSetup({
                 headers:{
-                    'Authorization': "biba"
+                    'Authorization': accessToken
                 }
             });
             $.ajax({

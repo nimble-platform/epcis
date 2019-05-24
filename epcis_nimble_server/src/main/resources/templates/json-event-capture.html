@@ -2,7 +2,8 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorator="layouts/default">
 
-<script type="text/javascript" layout:fragment="custom-script">
+<script type="text/javascript" layout:fragment="custom-script" th:inline="javascript">
+    /*<![CDATA[*/
     function createValidationResultMessage(result) {
         if (result.isValidated == false)
             return null;
@@ -38,9 +39,10 @@
         var captureURL = $("#captureURL").val();
         var captureXMLString = $("#xmlTextArea").val();
 
+        var accessToken = [[${session.accessToken}]] ;
         $.ajaxSetup({
             headers:{
-                'Authorization': "biba"
+                'Authorization': accessToken
             }
         });
 
@@ -70,6 +72,7 @@
     function movePage(page) {
         document.location.href = page;
     }
+    /*]]>*/
 </script>
 
 <body>
