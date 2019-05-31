@@ -37,7 +37,7 @@ spring:
       spec: initialCapacity=50,maximumSize=500,expireAfterWrite=3600s
   data:
     mongodb:
-      database: ${EPCIS_DB_NAME:epcis}
+      database: ${EPCIS_DB_NAME:epcis_remote}
       ssl: ${EPCIS_DB_SSL:false}
       uri: ${EPCIS_DB_URL:mongodb://localhost:27017/} 
   identity-service:
@@ -54,14 +54,14 @@ epcis:
     verification: true   
 data-replication:
   remote_nimble_epcis_server: 
-    enabled: ${DATA_REPLICATE_REMOTE_EPCIS:true}
-    url: ${REMOTE_EPCIS_SERVICE_URL:http://localhost:8080/}
+    enabled: ${DATA_REPLICATE_REMOTE_EPCIS:false}
+    url: ${REMOTE_EPCIS_SERVICE_URL:http://localhost:8099/}
     username: ${NIMBLE_USERNAME:xx}
     password: ${NIMBLE_PASSWORD:xx}
     # AfFor example, in default, the following url will be called for a simple event query: 
     # http://localhost:8119/Service/Poll/SimpleEventQuery?MATCH_epc=xx 
   blockchain:
-    enable: ${DATA_REPLICATE_BLOCKCHAIN:true}  
+    enable: ${DATA_REPLICATE_BLOCKCHAIN:false}
     url: ${BLOCKCHAIN_RFID_CAPTURE_URL:http://161.156.70.125:5000/rfid}
     # for adding RFID event into the BC network you need to send a post request as follows:
     # curl -H "Content-Type:application/json" -X POST -d @sample.json http://161.156.70.125:5000/events
