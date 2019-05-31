@@ -114,19 +114,22 @@ public class XMLEventCaptureWrapper extends BaseRestController {
         log.info("Capture Events into company local storage.... ");
         jsonEventCaptureSrv.capturePreparedJSONEvents(validJsonEventList, userID);
 
-        // Login into NIMBLE for replication
-        NIMBLEUserInfo nimbleUser = nimbleTokenService.loginNIMBLE();
-        if (null == nimbleUser) {
-            String msg = "Fail to replicate EPCIS event to NIMBLE platform and Blockchain, because failed to authorize the user with given name and password!";
-            log.error(msg);
-            return new ResponseEntity<>(msg, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        String bearerToken = nimbleUser.getBearerToken();
-        String userPartyID = nimbleUser.getUserPartyID();
+        String bearerToken = null;
+        String userPartyID = null;
 
         // Remote NIMBLE Server Capture
         boolean remoteCaptureSuccess = true;
         if (remoteNIMBLEEPCISEnabled) {
+            // Login into NIMBLE for replication
+            NIMBLEUserInfo nimbleUser = nimbleTokenService.loginNIMBLE();
+            if (null == nimbleUser) {
+                String msg = "Fail to replicate EPCIS event to NIMBLE platform and Blockchain, because failed to authorize the user with given name and password!";
+                log.error(msg);
+                return new ResponseEntity<>(msg, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            bearerToken = nimbleUser.getBearerToken();
+            userPartyID = nimbleUser.getUserPartyID();
+
             remoteCaptureSuccess = this.replicateRemoteEPCIS(inputString, bearerToken);
         }
 

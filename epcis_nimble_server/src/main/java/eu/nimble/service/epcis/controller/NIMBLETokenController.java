@@ -31,7 +31,7 @@ import io.swagger.annotations.ApiResponse;
 @Api(tags = {"NIMBLE Token Management"})
 @RestController
 @CrossOrigin()
-public class NIMBLETokenController {
+public class NIMBLETokenController extends BaseRestController{
     private static Logger log = LoggerFactory.getLogger(NIMBLETokenController.class);
 
 	@Value("${spring.identity-service.url}")
