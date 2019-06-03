@@ -67,9 +67,9 @@ data-replication:
     # curl -H "Content-Type:application/json" -X POST -d @sample.json http://161.156.70.125:5000/events
 
 credential:
-  username: somrat,nazmul
-  password: 123456,654321
-  accessToken: 1001,2002
+  username: ${EPCIS_COMPANY_USERNAME:user1,user2}
+  password: ${EPCIS_COMPANY_PASSWORD:pass1,pass2}
+  accessToken: ${EPCIS_COMPANY_TOKEN:token1,token2}
 #Credential
 #For credential we use username, password and accessToken. It works sequentially like for
 #username: somrat the password is: 123456 and the accessToken is 1001.
