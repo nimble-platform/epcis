@@ -72,7 +72,7 @@ credential:
   accessToken: ${EPCIS_COMPANY_TOKEN:token1,token2}
 #Credential
 #For credential we use username, password and accessToken. It works sequentially like for
-#username: somrat the password is: 123456 and the accessToken is 1001.
+#username: user1 the password is: pass1 and the accessToken is token1.
 
 #GUI
 #GUI application we are using only username and password, after login the accessToken automatically detect by application.
@@ -80,5 +80,5 @@ credential:
 #API
 #API application we need only accessToken and when you sent get or post request, you need to use Authorization key and the value
 #The value of the Authorization is our accessToken value.
-#Example. Authorization: 1001
+#Example. Authorization: token1
 
