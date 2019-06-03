@@ -37,7 +37,7 @@ spring:
       spec: initialCapacity=50,maximumSize=500,expireAfterWrite=3600s
   data:
     mongodb:
-      database: ${EPCIS_DB_NAME:epcis_remote}
+      database: ${EPCIS_DB_NAME:epcis}
       ssl: ${EPCIS_DB_SSL:false}
       uri: ${EPCIS_DB_URL:mongodb://localhost:27017/} 
   identity-service:
@@ -70,3 +70,15 @@ credential:
   username: somrat,nazmul
   password: 123456,654321
   accessToken: 1001,2002
+#Credential
+#For credential we use username, password and accessToken. It works sequentially like for
+#username: somrat the password is: 123456 and the accessToken is 1001.
+
+#GUI
+#GUI application we are using only username and password, after login the accessToken automatically detect by application.
+
+#API
+#API application we need only accessToken and when you sent get or post request, you need to use Authorization key and the value
+#The value of the Authorization is our accessToken value.
+#Example. Authorization: 1001
+
