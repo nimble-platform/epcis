@@ -24,7 +24,7 @@ public class XSDSchemaLoader {
     	File file = null;
     	
 		try {
-			file = new ClassPathResource("xsdSchema/" + schemaName).getFile();
+			file = new ClassPathResource("xsdSchema" + File.separator + schemaName).getFile();
 		} catch (IOException e) {
 			log.error("not able to load xsd schema: " + schemaName);
 		}
