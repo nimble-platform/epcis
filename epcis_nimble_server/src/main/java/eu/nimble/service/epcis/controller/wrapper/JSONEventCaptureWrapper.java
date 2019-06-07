@@ -59,12 +59,6 @@ public class JSONEventCaptureWrapper extends BaseRestController {
 
         JSONEventCaptureService jsonEventCaptureSrv = new JSONEventCaptureService();
 
-//String[] beanArray = applicationContext.getBeanDefinitionNames();
-//
-//		for(String s : beanArray) {
-//			System.out.println(s);
-//		}
-
         List<JSONObject> validJsonEventList = jsonEventCaptureSrv.prepareJSONEvents(inputString);
         if (null == validJsonEventList) {
             log.info("No Events Captured!");

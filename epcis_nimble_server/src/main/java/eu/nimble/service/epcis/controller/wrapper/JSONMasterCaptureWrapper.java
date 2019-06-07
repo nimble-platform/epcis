@@ -5,6 +5,7 @@ import eu.nimble.service.epcis.services.AuthorizationSrv;
 import eu.nimble.service.epcis.services.NIMBLETokenService;
 import org.json.JSONObject;
 import org.oliot.epcis.service.capture.JSONMasterCaptureService;
+import org.oliot.model.epcis.NIMBLEUserInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,10 +64,18 @@ public class JSONMasterCaptureWrapper extends BaseRestController {
         log.info("Capture Masters into company local storage.... ");
         jsonMasterCaptureService.capturePreparedJSONMasters(validJsonMasterList);
 
+        String bearerToken = null;
         // Remote NIMBLE Server Capture
         boolean remoteCaptureSuccess = true;
         if (remoteNIMBLEEPCISEnabled) {
-            remoteCaptureSuccess = this.replicateRemoteEPCIS(inputString);
+            NIMBLEUserInfo nimbleUser = nimbleTokenService.loginNIMBLE();
+            if (null == nimbleUser) {
+                String msg = "Fail to replicate EPCIS event to NIMBLE platform and Blockchain, because failed to authorize the user with given name and password!";
+                log.error(msg);
+                return new ResponseEntity<>(msg, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            bearerToken = nimbleUser.getBearerToken();
+            remoteCaptureSuccess = this.replicateRemoteEPCIS(inputString, bearerToken);
         }
 
         String responseMsg = "EPCIS Json Master captured: " + validJsonMasterList.size();
@@ -84,12 +93,11 @@ public class JSONMasterCaptureWrapper extends BaseRestController {
      * @param inputString
      * @return true, on success; false, otherwise
      */
-    public boolean replicateRemoteEPCIS(String inputString) {
+    public boolean replicateRemoteEPCIS(String inputString, String bearerToken) {
         boolean success = true;
 
         String jsonCaptureURL = remoteNIMBLEEPCISURL + "JSONMasterCapture";
 
-        String bearerToken = nimbleTokenService.getBearerToken();
         if (null == bearerToken) {
             log.error(
                     "Fail to send EPCIS master to NIMBLE platform because failed to authorize the user with given name and password!");
