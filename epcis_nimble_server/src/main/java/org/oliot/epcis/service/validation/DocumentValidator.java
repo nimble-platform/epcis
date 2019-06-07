@@ -8,7 +8,6 @@ import javax.xml.bind.JAXB;
 
 import org.oliot.epcis.service.capture.CaptureUtil;
 import org.json.JSONObject;
-import org.oliot.epcis.configuration.Configuration;
 import org.oliot.model.epcis.EPCISDocumentType;
 import org.oliot.model.epcis.EPCISMasterDataDocumentType;
 import org.oliot.model.epcis.VocabularyType;
@@ -44,15 +43,15 @@ import org.springframework.web.context.ServletContextAware;
 */
 
 @Controller
-public class DocumentValidator implements ServletContextAware {
+public class DocumentValidator {
 
-	@Autowired
-	ServletContext servletContext;
+//	@Autowired
+//	ServletContext servletContext;
 
-	@Override
-	public void setServletContext(ServletContext servletContext) {
-		this.servletContext = servletContext;
-	}
+//	@Override
+//	public void setServletContext(ServletContext servletContext) {
+//		this.servletContext = servletContext;
+//	}
 
 	@RequestMapping(value = "/Service/EPCISDocumentValidation", method = RequestMethod.POST)
 	@ResponseBody
