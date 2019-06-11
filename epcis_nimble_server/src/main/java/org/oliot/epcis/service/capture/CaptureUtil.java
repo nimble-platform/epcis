@@ -75,12 +75,20 @@ public class CaptureUtil {
 	public static boolean validate(InputStream is, String xsdSchemaName) {
 		try {
 			SchemaFactory schemaFactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
+			// associate the schema factory with the resource resolver, which is responsible for resolving the imported XSD's
+			schemaFactory.setResourceResolver(new ResourceResolver("xsdSchema/"));
 			XSDSchemaLoader xsdSchemaLoader = new XSDSchemaLoader();
 			InputStream xsdFile = xsdSchemaLoader.getXSDSchema(xsdSchemaName);
-			Schema schema = schemaFactory.newSchema(new StreamSource(xsdFile));
+			Schema schema = schemaFactory.newSchema(new StreamSource(xsdFile));	
 			Validator validator = schema.newValidator();
-			StreamSource xmlSource = new StreamSource(is);
-			validator.validate(xmlSource);
+			
+			DocumentBuilderFactory builderFactory = DocumentBuilderFactory.newInstance();
+			    builderFactory.setNamespaceAware(true);
+			DocumentBuilder parser= builderFactory
+	        .newDocumentBuilder();
+			Document document =parser.parse(is);
+		    validator.validate(new DOMSource(document));
+		    
 			return true;
 		} catch (SAXException e) {
 			log.error(e.toString());
@@ -88,6 +96,10 @@ public class CaptureUtil {
 		} catch (IOException e) {
 			log.error(e.toString());
 
+			return false;
+		}catch (ParserConfigurationException e) {
+			log.error(e.toString());
+			
 			return false;
 		}
 	}
