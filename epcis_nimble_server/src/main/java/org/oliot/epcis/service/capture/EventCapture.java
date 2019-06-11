@@ -118,7 +118,7 @@ public class EventCapture {
 		if (Configuration.isCaptureVerfificationOn == true) {
 			InputStream validateStream = CaptureUtil.getXMLDocumentInputStream(inputString);
 			boolean isValidated = CaptureUtil.validate(validateStream,
-					 "/EPCglobal-epcis-1_2.xsd");
+					 "EPCglobal-epcis-1_2.xsd");
 			if (isValidated == false) {
 				return new ResponseEntity<>(
 						new String("[Error] Input EPCIS Document does not comply the standard schema"),

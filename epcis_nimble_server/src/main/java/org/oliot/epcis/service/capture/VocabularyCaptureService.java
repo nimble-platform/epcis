@@ -28,7 +28,7 @@ public class VocabularyCaptureService {
         InputStream validateStream = CaptureUtil.getXMLDocumentInputStream(inputString);
         // Parsing and Validating data
         boolean isValidated = CaptureUtil.validate(validateStream,
-                 "/EPCglobal-epcis-masterdata-1_2.xsd");
+                 "EPCglobal-epcis-masterdata-1_2.xsd");
 
         if (!isValidated) {
             return null;
