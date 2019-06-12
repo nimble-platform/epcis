@@ -5,8 +5,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -32,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 /* added for json capture */
@@ -69,12 +75,20 @@ public class CaptureUtil {
 	public static boolean validate(InputStream is, String xsdSchemaName) {
 		try {
 			SchemaFactory schemaFactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
+			// associate the schema factory with the resource resolver, which is responsible for resolving the imported XSD's
+			schemaFactory.setResourceResolver(new ResourceResolver("xsdSchema/"));
 			XSDSchemaLoader xsdSchemaLoader = new XSDSchemaLoader();
-			File xsdFile = xsdSchemaLoader.getXSDSchema(xsdSchemaName);
-			Schema schema = schemaFactory.newSchema(xsdFile);
+			InputStream xsdFile = xsdSchemaLoader.getXSDSchema(xsdSchemaName);
+			Schema schema = schemaFactory.newSchema(new StreamSource(xsdFile));	
 			Validator validator = schema.newValidator();
-			StreamSource xmlSource = new StreamSource(is);
-			validator.validate(xmlSource);
+			
+			DocumentBuilderFactory builderFactory = DocumentBuilderFactory.newInstance();
+			    builderFactory.setNamespaceAware(true);
+			DocumentBuilder parser= builderFactory
+	        .newDocumentBuilder();
+			Document document =parser.parse(is);
+		    validator.validate(new DOMSource(document));
+		    
 			return true;
 		} catch (SAXException e) {
 			log.error(e.toString());
@@ -83,22 +97,39 @@ public class CaptureUtil {
 			log.error(e.toString());
 
 			return false;
+		}catch (ParserConfigurationException e) {
+			log.error(e.toString());
+			
+			return false;
 		}
 	}
 
 	public static String getValidationException(InputStream is, String xsdSchemaName) {
 		try {
 			SchemaFactory schemaFactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
+			// associate the schema factory with the resource resolver, which is responsible for resolving the imported XSD's
+			schemaFactory.setResourceResolver(new ResourceResolver("xsdSchema/"));
 			XSDSchemaLoader xsdSchemaLoader = new XSDSchemaLoader();
-			File xsdFile = xsdSchemaLoader.getXSDSchema(xsdSchemaName);
-			Schema schema = schemaFactory.newSchema(xsdFile);
+			InputStream xsdFile = xsdSchemaLoader.getXSDSchema(xsdSchemaName);
+			Schema schema = schemaFactory.newSchema(new StreamSource(xsdFile));	
 			Validator validator = schema.newValidator();
-			StreamSource xmlSource = new StreamSource(is);
-			validator.validate(xmlSource);
-			return null;
+			
+			DocumentBuilderFactory builderFactory = DocumentBuilderFactory.newInstance();
+			    builderFactory.setNamespaceAware(true);
+			DocumentBuilder parser= builderFactory
+	        .newDocumentBuilder();
+			Document document =parser.parse(is);
+		    validator.validate(new DOMSource(document));
+		
+		    return null;
 		} catch (SAXException e) {
+			log.error(e.toString());
 			return e.toString();
 		} catch (IOException e) {
+			log.error(e.toString());
+			return e.toString();
+		}catch (ParserConfigurationException e) {
+			log.error(e.toString());
 			return e.toString();
 		}
 	}

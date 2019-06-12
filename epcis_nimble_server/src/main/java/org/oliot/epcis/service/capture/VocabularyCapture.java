@@ -110,7 +110,7 @@ public class VocabularyCapture {
 			InputStream validateStream = CaptureUtil.getXMLDocumentInputStream(inputString);
 			// Parsing and Validating data
 			boolean isValidated = CaptureUtil.validate(validateStream,
-					 "/EPCglobal-epcis-masterdata-1_2.xsd");
+					 "EPCglobal-epcis-masterdata-1_2.xsd");
 			if (isValidated == false) {
 				return new ResponseEntity<>(new String("Error: EPCIS Masterdata Document is not validated"),
 						HttpStatus.BAD_REQUEST);
