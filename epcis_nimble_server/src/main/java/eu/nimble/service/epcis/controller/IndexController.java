@@ -66,7 +66,7 @@ public class IndexController {
 
         if(!authenticateUser) {
             session.setAttribute("invalidCredential", "Username or Password is not correct!");
-            modelAndView.setViewName("/");
+            modelAndView.setViewName("index");
         }
 
         return modelAndView;
