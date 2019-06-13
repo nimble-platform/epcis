@@ -1,5 +1,6 @@
 package eu.nimble.service.epcis.controller;
 
+import javax.servlet.http.*;
 import javax.validation.Valid;
 import eu.nimble.service.epcis.form.Login;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,9 +12,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.ModelAndView;
-
-import javax.servlet.http.HttpSession;
-import java.util.List;
+import java.util.*;
 
 @Controller
 @Scope("session")
@@ -30,6 +29,9 @@ public class IndexController {
 
     @Autowired
     HttpSession session;
+
+    @Autowired
+    HttpServletRequest request;
 
     @GetMapping("/")
     public String main(Model model) {
@@ -64,19 +66,17 @@ public class IndexController {
 
         if(!authenticateUser) {
             session.setAttribute("invalidCredential", "Username or Password is not correct!");
-            modelAndView.setViewName("index");
+            modelAndView.setViewName("/");
         }
 
         return modelAndView;
     }
 
     @GetMapping("/home")
-    public String index(){
-        if(checkAuthentication()) {
-            return "home";
-        }
-        return "redirect:/";
+    public ModelAndView home() {
+        return checkAuthenticateAndRedirect();
     }
+
 
     @GetMapping("/logout")
     public String logout(HttpSession session) {
@@ -85,97 +85,68 @@ public class IndexController {
     }
 
     @GetMapping("/json-event-capture")
-    public String jsonEventCapture() {
-        if(checkAuthentication()) {
-            return "json-event-capture";
-        }
-        return "redirect:/";
+    public ModelAndView jsonEventCapture() {
+        return checkAuthenticateAndRedirect();
     }
 
     @GetMapping("/json-event-query")
-    public String jsonEventQuery() {
-        if(checkAuthentication()) {
-            return "json-event-query";
-        }
-        return "redirect:/";
+    public ModelAndView jsonEventQuery() {
+        return checkAuthenticateAndRedirect();
     }
 
     @GetMapping("/json-master-single-capture")
-    public String jsonMasterSingleCapture() {
-        if(checkAuthentication()) {
-            return "json-master-single-capture";
-        }
-        return "redirect:/";
+    public ModelAndView jsonMasterSingleCapture() {
+        return checkAuthenticateAndRedirect();
     }
 
     @GetMapping("/json-master-multiple-capture")
-    public String jsonMasterMultipleCapture() {
-        if(checkAuthentication()) {
-            return "json-master-multiple-capture";
-        }
-        return "redirect:/";
+    public ModelAndView jsonMasterMultipleCapture() {
+        return checkAuthenticateAndRedirect();
     }
 
     @GetMapping("json-master-query")
-    public String jsonMasterQuery() {
-        if(checkAuthentication()) {
-            return "json-master-query";
-        }
-        return "redirect:/";
+    public ModelAndView jsonMasterQuery() {
+        return checkAuthenticateAndRedirect();
     }
 
     @GetMapping("/xml-event-capture")
-    public String xmlEventCapture() {
-        if(checkAuthentication()) {
-            return "xml-event-capture";
-        }
-        return "redirect:/";
+    public ModelAndView xmlEventCapture() {
+       return checkAuthenticateAndRedirect();
     }
 
     @GetMapping("/xml-event-query")
-    public String xmlEventQuery() {
-        if(checkAuthentication()) {
-            return "xml-event-query";
-        }
-        return "redirect:/";
+    public ModelAndView xmlEventQuery() {
+        return checkAuthenticateAndRedirect();
     }
 
     @GetMapping("/xml-master-capture")
-    public String xmlMasterCapture() {
-        if(checkAuthentication()) {
-            return "xml-master-capture";
-        }
-        return "redirect:/";
+    public ModelAndView xmlMasterCapture() {
+        return checkAuthenticateAndRedirect();
     }
 
     @GetMapping("xml-master-query")
-    public String xmlMasterQuery() {
-        if(checkAuthentication()) {
-            return "xml-master-query";
-        }
-        return "redirect:/";
+    public ModelAndView xmlMasterQuery() {
+        return checkAuthenticateAndRedirect();
     }
 
     @GetMapping("/json-production-capture")
-    public String jsonProductionCapture() {
-        if(checkAuthentication()) {
-            return "json-production-capture";
-        }
-        return "redirect:/";
+    public ModelAndView jsonProductionCapture() {
+        return checkAuthenticateAndRedirect();
     }
 
     @GetMapping("/json-production-query")
-    public String jsonProductionQuery() {
-        if(checkAuthentication()) {
-            return "json-production-query";
-        }
-        return "redirect:/";
+    public ModelAndView jsonProductionQuery() {
+        return checkAuthenticateAndRedirect();
     }
 
-    private boolean checkAuthentication() {
-        if( session.getAttribute("accessToken") == null) {
-            return false;
+    private ModelAndView checkAuthenticateAndRedirect() {
+        ModelAndView modelAndView = new ModelAndView();
+        if( session.getAttribute("accessToken") != null) {
+            modelAndView.addObject("currentUrl", request.getRequestURI());
+        } else {
+            modelAndView.addObject("login", new Login());
+            modelAndView.setViewName("index");
         }
-        return true;
+        return modelAndView;
     }
 }

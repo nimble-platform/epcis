@@ -118,14 +118,14 @@
                             </button>
                             <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
                                 <li class="dropdown-header">Event Data Examples</li>
-                                <li><a id="./exampleJSON/gs1example1Json(Object).json" href="#">GS1
+                                <li><a id="./exampleJSON/gs1example1Json(Object).json" th:href="@{'.' + ${currentUrl}} + '#'">GS1
                                     Example 1 [EPCIS v1.2 section 9.6.1]</a></li>
-                                <li><a id="./exampleJSON/gs1example2Json(Object).json" href="#">GS1
+                                <li><a id="./exampleJSON/gs1example2Json(Object).json" th:href="@{'.' + ${currentUrl}} + '#'">GS1
                                     Example 2 [EPCIS v1.2 section 9.6.2]</a></li>
                                 <li><a id="./exampleJSON/gs1example3Json(Aggregation).json"
-                                       href="#">GS1 Example 3 [EPCIS v1.2 section 9.6.3]</a></li>
+                                       th:href="@{'.' + ${currentUrl}} + '#'">GS1 Example 3 [EPCIS v1.2 section 9.6.3]</a></li>
                                 <li><a id="./exampleJSON/gs1example4Json(Transformation).json"
-                                       href="#">GS1 Example 4 [EPCIS v1.2 section 9.6.4]</a></li>
+                                       th:href="@{'.' + ${currentUrl}} + '#'">GS1 Example 4 [EPCIS v1.2 section 9.6.4]</a></li>
                             </ul>
                         </div>
                         <textarea id="xmlTextArea" class="form-control auto-text-area"
