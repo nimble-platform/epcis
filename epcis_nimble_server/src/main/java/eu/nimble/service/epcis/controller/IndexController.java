@@ -142,7 +142,7 @@ public class IndexController {
     private ModelAndView checkAuthenticateAndRedirect() {
         ModelAndView modelAndView = new ModelAndView();
         if( session.getAttribute("accessToken") != null) {
-            modelAndView.addObject("currentUrl", request.getRequestURI());
+            modelAndView.addObject("currentUrl", request.getRequestURI().replace("/", ""));
         } else {
             modelAndView.addObject("login", new Login());
             modelAndView.setViewName("index");
