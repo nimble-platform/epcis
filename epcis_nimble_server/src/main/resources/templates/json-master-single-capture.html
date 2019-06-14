@@ -602,13 +602,15 @@
             var tablaeBody = $("table tbody");
             var numItems = items.length;
             var perPage = 20;
+            var currentUrl = [[${currentUrl}]] + '#page-' ;
             // Only show the first 20 (or first `per_page`) items initially.
-            tablaeBody.html(items.slice(0,20));
+            tablaeBody.html(items.slice(0,perPage));
             // Now setup the pagination using the `.pagination-page` div.
             $("#pagination").pagination({
                 items: numItems,
                 itemsOnPage: perPage,
                 cssStyle: "light-theme",
+                hrefTextPrefix: currentUrl,
                 // This is the actual page changing functionality.
                 onPageClick: function(pageNumber) {
                     // We need to show and hide `tr`s appropriately.
