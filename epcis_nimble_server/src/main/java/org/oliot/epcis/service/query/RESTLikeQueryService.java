@@ -314,7 +314,7 @@ public class RESTLikeQueryService extends BaseRestController {
 		} else {
 			responseHeaders.add("Content-Type", "application/xml; charset=utf-8");
 		}
-		
+
 		// Check NIMBLE authorization
 		String userPartyID = authorizationSrv.checkToken(bearerToken);
 		if (userPartyID == null) {
@@ -360,7 +360,7 @@ public class RESTLikeQueryService extends BaseRestController {
 		}
 		
 		parmas.setQueryName(queryName);
-		
+
 		// Check NIMBLE authorization
 		String userPartyID = authorizationSrv.checkToken(bearerToken);
 		if (userPartyID == null) {

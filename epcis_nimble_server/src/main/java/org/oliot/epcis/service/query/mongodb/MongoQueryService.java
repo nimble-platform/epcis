@@ -561,7 +561,7 @@ public class MongoQueryService {
 		{
 			throw new QueryParameterException();
 		}
-		
+
 		// Make Base Result Document
 		JSONArray retArray = new JSONArray();
 
@@ -575,7 +575,7 @@ public class MongoQueryService {
 		if (queryObject != null) {
 			queryList.add(queryObject);
 		}
-		
+
 		// Merge All the queries with $and
 		BsonDocument baseQuery = new BsonDocument();
 		FindIterable<BsonDocument> cursor;
@@ -600,10 +600,10 @@ public class MongoQueryService {
 			foundProductionProcTemplateCount++;
 			BsonDocument dbObject = slCursor.next();
 			dbObject.remove("_id");
-			
+
 			JSONObject jsonObject = new JSONObject(dbObject.toJson());
 			JSONArray jsonProcStepList = jsonObject.getJSONArray("productionProcessTemplate");
-			
+
 			for (int i = 0; i < jsonProcStepList.length(); i++) {
 				JSONObject jsonProcStepElement = jsonProcStepList.getJSONObject(i);
 				retArray.put(jsonProcStepElement);
@@ -615,7 +615,7 @@ public class MongoQueryService {
 			throw new QueryTooLargeException(retArray.length(), maxNumOfProcTemplateForOneProduct,
 					"ProductProcessTemplateQuery", null);
 		}
-		
+
 		return retArray.toString(1);
 	}
 
