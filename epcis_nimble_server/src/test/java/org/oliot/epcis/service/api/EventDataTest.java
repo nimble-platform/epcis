@@ -16,7 +16,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest(classes = EPCISRepositoryApplication.class)
-public class allAPITest {
+public class EventDataTest {
 
     @Value("${test.base-url}")
     private String baseUrl;
@@ -29,13 +29,8 @@ public class allAPITest {
     private String accessToken;
 
     @Test
-    public void getJsonProductionProcessTemplate() {
-        this.getRestAPITest(this.getBaseUrl() + "/GetProductionProcessTemplate/testProductionClass");
-    }
-
-    @Test
-    public void getJsonMasterQuery() {
-        this.getRestAPITest(this.getBaseUrl() + "/Poll/SimpleMasterDataQuery?includeAttributes=true&includeChildren=true&masterDataFormat=JSON");
+    public void getJsonEventQuery() {
+        this.getRestAPITest(this.getBaseUrl() + "/Poll/SimpleEventQuery?format=JSON");
     }
 
     private void getRestAPITest(String url) {
@@ -51,3 +46,4 @@ public class allAPITest {
         }
     }
 }
+
