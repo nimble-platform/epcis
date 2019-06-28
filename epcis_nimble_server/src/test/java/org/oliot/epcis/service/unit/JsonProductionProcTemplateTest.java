@@ -1,4 +1,4 @@
-package org.oliot.epcis.service;
+package org.oliot.epcis.service.unit;
 
 import eu.nimble.service.epcis.EPCISRepositoryApplication;
 import org.json.JSONObject;

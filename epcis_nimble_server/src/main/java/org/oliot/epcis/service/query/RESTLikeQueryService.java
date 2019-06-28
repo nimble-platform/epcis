@@ -176,10 +176,10 @@ public class RESTLikeQueryService extends BaseRestController {
 			@ApiResponse(code = 401, message = "Unauthorized. Are the headers correct?"), })
 	@RequestMapping(value = "/GetProductionProcessTemplate/{productClass}", method = RequestMethod.GET)
 	@ResponseBody
-    public ResponseEntity<?> getProductionProcessTemplate(@ApiParam(value = "Product Categoy ID in NIMBLE Platform", required = true)  @PathVariable String productClass, 
-    		@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = false)  String bearerToken)
+    public ResponseEntity<?> getProductionProcessTemplate(@ApiParam(value = "Product Categoy ID in NIMBLE Platform", required = true)  @PathVariable String productClass,
+    		@ApiParam(value = "The Bearer token provided by the identity service", required = true) @RequestHeader(value = "Authorization", required = true)  String bearerToken)
     		throws IOException, QueryTooLargeException, QueryParameterException {
-		
+
 		// Check NIMBLE authorization
 		String userPartyID = authorizationSrv.checkToken(bearerToken);
 		if (userPartyID == null) {
