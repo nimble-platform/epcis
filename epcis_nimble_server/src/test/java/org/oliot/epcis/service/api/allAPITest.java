@@ -19,14 +19,33 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 public class allAPITest {
 
     @Value("${test.base-url}")
-    public String baseUrl;
+    private String baseUrl;
+
+    private String getBaseUrl() {
+        return baseUrl + "/Service";
+    }
 
     @Value("${test.accessToken}")
-    public String accessToken;
+    private String accessToken;
 
     @Test
     public void getJsonProductionProcessTemplate() {
-        String url = baseUrl + "/Service/GetProductionProcessTemplate/testProductionClass";
+        String url = this.getBaseUrl() + "/GetProductionProcessTemplate/testProductionClass";
+        try {
+            HttpUriRequest request = new HttpGet(url);
+            request.addHeader("Authorization", accessToken);
+            HttpResponse httpResponse = HttpClientBuilder.create().build().execute( request );
+            Assert.assertThat(
+                    httpResponse.getStatusLine().getStatusCode(),
+                    IsEqual.equalTo(HttpStatus.SC_OK));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void getJsonMasterQuery() {
+        String url = this.getBaseUrl() + "/Poll/SimpleMasterDataQuery?includeAttributes=true&includeChildren=true&masterDataFormat=JSON";
         try {
             HttpUriRequest request = new HttpGet(url);
             request.addHeader("Authorization", accessToken);

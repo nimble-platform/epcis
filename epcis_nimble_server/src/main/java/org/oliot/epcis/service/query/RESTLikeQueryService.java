@@ -188,9 +188,9 @@ public class RESTLikeQueryService extends BaseRestController {
 		
 		
         System.out.println("productClass:" + productClass);
-        
+
 		String result = mongoQueryService.pollProductionProcTemplateQuery(productClass);
-                
+
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.add("Content-Type", "application/json; charset=utf-8");
         return new ResponseEntity<>(result, responseHeaders, HttpStatus.OK);
