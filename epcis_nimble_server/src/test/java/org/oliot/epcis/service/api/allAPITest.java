@@ -30,22 +30,15 @@ public class allAPITest {
 
     @Test
     public void getJsonProductionProcessTemplate() {
-        String url = this.getBaseUrl() + "/GetProductionProcessTemplate/testProductionClass";
-        try {
-            HttpUriRequest request = new HttpGet(url);
-            request.addHeader("Authorization", accessToken);
-            HttpResponse httpResponse = HttpClientBuilder.create().build().execute( request );
-            Assert.assertThat(
-                    httpResponse.getStatusLine().getStatusCode(),
-                    IsEqual.equalTo(HttpStatus.SC_OK));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        this.getRestAPITest(this.getBaseUrl() + "/GetProductionProcessTemplate/testProductionClass");
     }
 
     @Test
     public void getJsonMasterQuery() {
-        String url = this.getBaseUrl() + "/Poll/SimpleMasterDataQuery?includeAttributes=true&includeChildren=true&masterDataFormat=JSON";
+        this.getRestAPITest(this.getBaseUrl() + "/Poll/SimpleMasterDataQuery?includeAttributes=true&includeChildren=true&masterDataFormat=JSON");
+    }
+
+    private void getRestAPITest(String url) {
         try {
             HttpUriRequest request = new HttpGet(url);
             request.addHeader("Authorization", accessToken);
