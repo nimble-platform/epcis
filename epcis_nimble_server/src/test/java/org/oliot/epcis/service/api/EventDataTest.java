@@ -33,6 +33,11 @@ public class EventDataTest {
         this.getRestAPITest(this.getBaseUrl() + "/Poll/SimpleEventQuery?format=JSON");
     }
 
+    @Test
+    public void getXmlEventQuery() {
+        this.getRestAPITest(this.getBaseUrl() + "/Poll/SimpleEventQuery?format=XML");
+    }
+
     private void getRestAPITest(String url) {
         try {
             HttpUriRequest request = new HttpGet(url);

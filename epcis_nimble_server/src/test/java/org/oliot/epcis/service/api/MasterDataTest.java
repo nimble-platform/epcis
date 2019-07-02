@@ -33,6 +33,11 @@ public class MasterDataTest {
         this.getRestAPITest(this.getBaseUrl() + "/Poll/SimpleMasterDataQuery?includeAttributes=true&includeChildren=true&masterDataFormat=JSON");
     }
 
+    @Test
+    public void getXmlMasterQuery() {
+        this.getRestAPITest(this.getBaseUrl() + "/Poll/SimpleMasterDataQuery?includeAttributes=true&includeChildren=true&masterDataFormat=XML");
+    }
+
     private void getRestAPITest(String url) {
         try {
             HttpUriRequest request = new HttpGet(url);
