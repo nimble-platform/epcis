@@ -11,3 +11,4 @@ ENV JAR '/'$finalName
 ADD $finalName $JAR
 RUN touch $JAR
 ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom", "-jar", "epcis.jar"]
+
