@@ -93,7 +93,7 @@ public class JSONMasterCaptureService {
         return INVALID_JSON_MASTERS;
     }
 
-    public void capturePreparedJSONMasters(List<JSONObject> validJsonMasterList) {
+    public void capturePreparedJSONMasters(List<JSONObject> validJsonMasterList, String userID) {
         if(null == validJsonMasterList)
         {
             log.info("No Masters Captured!");
@@ -101,7 +101,7 @@ public class JSONMasterCaptureService {
         }
         MongoCaptureUtil m = new MongoCaptureUtil();
         for (JSONObject jsonObj :  validJsonMasterList) {
-            m.captureJSONMaster(jsonObj);
+            m.captureJSONMaster(jsonObj, userID);
         }
 
         log.info("Masters Captured:" + validJsonMasterList.size());

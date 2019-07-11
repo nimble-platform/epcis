@@ -62,7 +62,7 @@ public class JSONMasterCaptureWrapper extends BaseRestController {
 
         // Local Capture
         log.info("Capture Masters into company local storage.... ");
-        jsonMasterCaptureService.capturePreparedJSONMasters(validJsonMasterList);
+        jsonMasterCaptureService.capturePreparedJSONMasters(validJsonMasterList, userID);
 
         String bearerToken = null;
         // Remote NIMBLE Server Capture
