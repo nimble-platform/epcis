@@ -43,7 +43,7 @@ public class MasterDataController extends BaseRestController{
         return new ResponseEntity<>(masterDataItem.toJson(), responseHeaders, HttpStatus.OK);
     }
 
-    @PostMapping("/deleteMasterData")
+    @PostMapping("/deleteMasterDataItem")
     public ResponseEntity<?> deleteMasterDataItem(@RequestParam("id") String id,
               @RequestHeader(value="Authorization", required=true) String bearerToken) {
 
@@ -56,6 +56,7 @@ public class MasterDataController extends BaseRestController{
         MongoCollection<BsonDocument> collection = Configuration.mongoDatabase.getCollection("MasterData",
                 BsonDocument.class);
         collection.deleteOne(new Document("_id", new ObjectId(id)));
-        return new ResponseEntity<>(collection.deleteOne(new Document("_id", new ObjectId(id))), HttpStatus.OK);
+        log.info("Delete Master Data Item Id: " + id);
+        return new ResponseEntity<>("Delete Master Data Item Id: " + id, HttpStatus.OK);
     }
 }

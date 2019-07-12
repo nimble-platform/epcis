@@ -432,7 +432,7 @@
             $('#deleteMasterDataModal').modal('hide');
             $deleteMasterData = $("#deleteMasterDataForm").serializeArray();
             itemID = $deleteMasterData[0]['value'];
-            deleteMasterDataUrl = 'http://' + location.host + '/Service/deleteMasterData';
+            deleteMasterDataUrl = 'http://' + location.host + '/Service/deleteMasterDataItem';
             var accessToken = [[${session.accessToken}]] ;
             $.ajaxSetup({
                 headers:{
