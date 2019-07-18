@@ -51,8 +51,13 @@ public class MasterDataController extends BaseRestController{
         return new ResponseEntity<>(masterDataItem.toJson(), responseHeaders, HttpStatus.OK);
     }
 
+    @ApiOperation(value = "Delete MasterData item for the given ObjectId.", notes = "Delete one MasterData Item based on ObjectId, which is the unique id of MasterData Table")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "success"),
+            @ApiResponse(code = 400, message = "ObjectId is not valid?"),
+            @ApiResponse(code = 401, message = "Unauthorized. Are the headers correct?"), })
     @PostMapping("/deleteMasterDataItem")
-    public ResponseEntity<?> deleteMasterDataItem(@RequestParam("id") String id,
+    public ResponseEntity<?> deleteMasterDataItem(@ApiParam(value = "MasterData ObjectId", required = true) @RequestParam("id") String id,
+              @ApiParam(value = "The Bearer token provided by the identity service", required = true)
               @RequestHeader(value="Authorization", required=true) String bearerToken) {
 
         // Check NIMBLE authorization
