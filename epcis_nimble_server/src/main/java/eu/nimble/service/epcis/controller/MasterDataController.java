@@ -51,7 +51,8 @@ public class MasterDataController extends BaseRestController{
         return new ResponseEntity<>(masterDataItem.toJson(), responseHeaders, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Delete MasterData item for the given ObjectId.", notes = "Delete one MasterData Item based on ObjectId, which is the unique id of MasterData Table")
+    @ApiOperation(value = "Delete MasterData item for the given ObjectId.",
+            notes = "Delete one MasterData Item based on ObjectId, which is the unique id of MasterData Table", response = String.class)
     @ApiResponses(value = { @ApiResponse(code = 200, message = "success"),
             @ApiResponse(code = 400, message = "ObjectId is not valid?"),
             @ApiResponse(code = 401, message = "Unauthorized. Are the headers correct?"), })

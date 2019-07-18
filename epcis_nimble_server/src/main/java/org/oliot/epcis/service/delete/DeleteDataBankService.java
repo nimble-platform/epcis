@@ -4,6 +4,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.client.MongoCollection;
 import eu.nimble.service.epcis.controller.BaseRestController;
 import eu.nimble.service.epcis.services.AuthorizationSrv;
+import io.swagger.annotations.*;
 import org.bson.BsonDocument;
 import org.oliot.epcis.configuration.Configuration;
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Api(tags = { "EPCIS DataBank Delete" })
 @RestController
 public class DeleteDataBankService extends BaseRestController {
 
@@ -24,9 +26,20 @@ public class DeleteDataBankService extends BaseRestController {
 
     private static Logger log = LoggerFactory.getLogger(DeleteDataBankService.class);
 
+    @ApiOperation(value = "Delete DataBank based on type", notes = "Delete DataBank based on user and type. A User automatically detect by token. We have 4 available type and they are: <br>" +
+            "<textarea disabled style=\"width:98%\" class=\"body-textarea\">" +
+            "EventData => To delete all EventData \n" +
+            "MasterData => To delete all MasterData \n" +
+            "ProductionProcessTemplate => To delete all Production Process Template Data \n" +
+            "Data => To delete this all 3 types of data"
+            + " </textarea>", response = String.class)
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "success"),
+            @ApiResponse(code = 400, message = "ObjectId is not valid?"),
+            @ApiResponse(code = 401, message = "Unauthorized. Are the headers correct?"), })
     @PostMapping("/deleteDataBank")
-    public ResponseEntity<?> deleteDataBank(@RequestParam("type") String type,
-                  @RequestHeader(value="Authorization", required=true) String bearerToken) {
+    public ResponseEntity<?> deleteDataBank(@ApiParam(value = "Which type of data you want to delete?", required = true)@RequestParam("type") String type,
+                @ApiParam(value = "The Bearer token provided by the identity service", required = true)
+                @RequestHeader(value="Authorization", required=true) String bearerToken) {
 
         // Check NIMBLE authorization
         String userPartyID = authorizationSrv.checkToken(bearerToken);
