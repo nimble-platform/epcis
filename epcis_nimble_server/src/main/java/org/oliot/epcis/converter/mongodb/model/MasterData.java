@@ -5,7 +5,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.restfb.types.User;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import org.bson.BsonDocument;
+import org.oliot.model.epcis.NIMBLEUserInfo;
 
 /**
  * Copyright (C) 2014-17 Jaewook Byun
@@ -24,12 +29,23 @@ import org.bson.BsonDocument;
  * 
  *         bjw0829@kaist.ac.kr, bjw0829@gmail.com
  */
+@ApiModel(description = "All step details about the MasterData")
 public class MasterData {
 
+	@ApiModelProperty(notes = "type",  example = "urn:epcglobal:epcis:vtype:BusinessLocation", required = true)
 	private VocabularyType type;
+
+	@ApiModelProperty(notes = "MasterData ID",  example = "urn:epc:id:sgln:B1", required = true)
 	private String id;
+
+	@ApiModelProperty(notes = "attributes", example = "{urn:epcglobal:cbv:mda#description: Bangladesh}", required = true)
 	private Map<String, String> attributes;
+
+	@ApiModelProperty(notes = "children", dataType = "List", example = "[urn:epc:id:sgln:0037000.00729.8201]")
 	private List<String> children;
+
+	@ApiModelProperty(notes = "User Party ID",  example = "user1", required = true)
+	private String userPartyID;
 
 	public MasterData(VocabularyType type, String id) {
 		this.type = type;
@@ -68,6 +84,14 @@ public class MasterData {
 
 	public void setChildren(List<String> children) {
 		this.children = children;
+	}
+
+	public String getUserPartyID() {
+		return userPartyID;
+	}
+
+	public void setUserPartyID(String userPartyID) {
+		this.userPartyID = userPartyID;
 	}
 
 	public BsonDocument asBsonDocument() {
