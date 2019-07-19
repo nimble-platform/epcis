@@ -417,10 +417,11 @@
         }
 
         $(document).on("click", "#deleteMasterDataItem", function (event) {
-            var itemID = $(this).parent().next().next().next().next().text();
+            var itemID = $(this).parent().next().next().text();
+
             $("#masterDataItemDeleteModalBody").empty();
             $("#masterDataItemDeleteModalBody").append(
-                '<p>Do you really want to delete these records?</p>'
+                '<p>Do you really want to delete all these records for Id: '+ itemID +' ?</p>'
             );
             $("#masterDataItemDeleteModalBody").append(
                 '<input name="id" type="hidden" value="' + itemID + '" required="required" />'
@@ -432,7 +433,7 @@
             $('#deleteMasterDataModal').modal('hide');
             $deleteMasterData = $("#deleteMasterDataForm").serializeArray();
             itemID = $deleteMasterData[0]['value'];
-            deleteMasterDataUrl = 'http://' + location.host + '/Service/deleteMasterDataItem';
+            deleteMasterDataUrl = 'http://' + location.host + '/Service/deleteMasterDataItemById';
             var accessToken = [[${session.accessToken}]] ;
             $.ajaxSetup({
                 headers:{
