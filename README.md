@@ -24,7 +24,13 @@
 ### Quick Test ###
 > When it works properly, http://localhost:8080/greeting will return a greeting string.
 
-
+### Test Application ###
+> Set up your base-url and accessToken in application.yml file test section.
+```
+test:
+  base-url: ${EPCIS_TEST_BASE_URL:http://localhost:8080}
+  accessToken: ${EPCIS_TEST_TOKEN:token1}
+```
 
 
 
