@@ -81,9 +81,8 @@ credential:
 #API application we need only accessToken and when you sent get or post request, you need to use Authorization key and the value
 #The value of the Authorization is our accessToken value.
 #Example. Authorization: token1
+
 test:
   base-url: ${EPCIS_TEST_BASE_URL:http://localhost:8080}
   accessToken: ${EPCIS_TEST_TOKEN:token1}
-#API Testing
-#You need to set base url as defined on your application
-#The accessToken for testing API must be taken from @credential accessToken List any one.
+#Set up your base-url and accessToken here for testing.
