@@ -31,6 +31,7 @@ test:
   base-url: ${EPCIS_TEST_BASE_URL:http://localhost:8080}
   accessToken: ${EPCIS_TEST_TOKEN:token1}
 ```
+To run the test you need IDEA like Eclipse or IntelliJ.
 
 
 
