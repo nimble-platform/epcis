@@ -152,10 +152,10 @@ public class EventDataTest {
         this.getRestAPITest(this.getBaseUrl() + "/Poll/SimpleEventQuery?format=JSON");
     }
 
-    @Test
+    /*@Test
     public void getXmlEventQuery() {
         this.getRestAPITest(this.getBaseUrl() + "/Poll/SimpleEventQuery?format=XML");
-    }
+    }*/
 
     private void postRestAPITest(String url, String contentType, String entity) {
         try {
