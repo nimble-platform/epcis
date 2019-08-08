@@ -1,17 +1,15 @@
 package eu.nimble.service.epcis.controller;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Filters;
 import eu.nimble.service.epcis.services.AuthorizationSrv;
 import io.swagger.annotations.*;
 import org.bson.BsonDocument;
 import org.bson.Document;
-import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
+import org.json.JSONObject;
 import org.oliot.epcis.configuration.Configuration;
-import org.oliot.epcis.converter.mongodb.model.MasterData;
-import org.oliot.epcis.service.query.RESTLikeQueryService;
 import org.oliot.epcis.service.query.mongodb.MongoQueryService;
 import org.oliot.model.epcis.PollParameters;
 import org.slf4j.Logger;
@@ -21,6 +19,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+import static com.mongodb.client.model.Filters.eq;
 
 @Api(tags = { "EPCIS MasterData Operation" })
 @RestController
@@ -47,7 +51,7 @@ public class MasterDataController extends BaseRestController{
         MongoCollection<BsonDocument> collection = Configuration.mongoDatabase.getCollection("MasterData",
                 BsonDocument.class);
         BsonDocument masterDataItem = collection.find(
-                Filters.eq("_id", new ObjectId(id))
+                eq("_id", new ObjectId(id))
         ).first();
         return new ResponseEntity<>(masterDataItem.toJson(), responseHeaders, HttpStatus.OK);
     }
@@ -108,5 +112,57 @@ public class MasterDataController extends BaseRestController{
         }
 
         return new ResponseEntity<>(masterDataItem, HttpStatus.OK);
+    }
+
+    @GetMapping("/getAllBusinessLocation")
+    public ResponseEntity<?> getAllBusinessLocation(@ApiParam(value = "The Bearer token provided by the identity service", required = true)
+            @RequestHeader(value="Authorization", required=true) String bearerToken) {
+
+        // Check NIMBLE authorization
+        String userPartyID = authorizationSrv.checkToken(bearerToken);
+        if (userPartyID == null) {
+            return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
+        }
+
+        PollParameters p = new PollParameters();
+        p.setVocabularyName("urn:epcglobal:epcis:vtype:BusinessLocation");
+        p.setMasterDataFormat("JSON");
+        p.setQueryName("SimpleMasterDataQuery");
+
+        String businessLocationItems = null;
+        MongoQueryService mongoQueryService = new MongoQueryService();
+        try {
+            businessLocationItems = mongoQueryService.poll(p, userPartyID);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return new ResponseEntity<>(businessLocationItems, HttpStatus.OK);
+    }
+
+    @GetMapping("/getAllReadPoint")
+    public ResponseEntity<?> getAllReadPoint(@ApiParam(value = "The Bearer token provided by the identity service", required = true)
+                                                    @RequestHeader(value="Authorization", required=true) String bearerToken) {
+
+        // Check NIMBLE authorization
+        String userPartyID = authorizationSrv.checkToken(bearerToken);
+        if (userPartyID == null) {
+            return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
+        }
+
+        PollParameters p = new PollParameters();
+        p.setVocabularyName("urn:epcglobal:epcis:vtype:ReadPoint");
+        p.setMasterDataFormat("JSON");
+        p.setQueryName("SimpleMasterDataQuery");
+
+        String businessLocationItems = null;
+        MongoQueryService mongoQueryService = new MongoQueryService();
+        try {
+            businessLocationItems = mongoQueryService.poll(p, userPartyID);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return new ResponseEntity<>(businessLocationItems, HttpStatus.OK);
     }
 }
