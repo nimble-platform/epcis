@@ -8,6 +8,7 @@ import io.swagger.annotations.*;
 import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.oliot.epcis.configuration.Configuration;
 import org.oliot.epcis.service.query.mongodb.MongoQueryService;
@@ -124,20 +125,20 @@ public class MasterDataController extends BaseRestController{
             return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
         }
 
-        PollParameters p = new PollParameters();
-        p.setVocabularyName("urn:epcglobal:epcis:vtype:BusinessLocation");
-        p.setMasterDataFormat("JSON");
-        p.setQueryName("SimpleMasterDataQuery");
+        MongoCollection<BsonDocument> collection = Configuration.mongoDatabase.getCollection("MasterData",
+                BsonDocument.class);
+        BasicDBObject document = new BasicDBObject();
+        document.append("type", "urn:epcglobal:epcis:vtype:BusinessLocation");
+        FindIterable<BsonDocument> findIterable = collection.find(document);
+        Iterator iterator = findIterable.iterator();
+        JSONArray jsonArray = new JSONArray();
 
-        String businessLocationItems = null;
-        MongoQueryService mongoQueryService = new MongoQueryService();
-        try {
-            businessLocationItems = mongoQueryService.poll(p, userPartyID);
-        } catch (Exception e) {
-            e.printStackTrace();
+        while (iterator.hasNext()) {
+            BsonDocument bsonDocument = (BsonDocument) iterator.next();
+            jsonArray.put(bsonDocument.getString("id").getValue());
         }
 
-        return new ResponseEntity<>(businessLocationItems, HttpStatus.OK);
+        return new ResponseEntity<>(jsonArray, HttpStatus.OK);
     }
 
     @GetMapping("/getAllReadPoint")
@@ -150,19 +151,19 @@ public class MasterDataController extends BaseRestController{
             return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
         }
 
-        PollParameters p = new PollParameters();
-        p.setVocabularyName("urn:epcglobal:epcis:vtype:ReadPoint");
-        p.setMasterDataFormat("JSON");
-        p.setQueryName("SimpleMasterDataQuery");
+        MongoCollection<BsonDocument> collection = Configuration.mongoDatabase.getCollection("MasterData",
+                BsonDocument.class);
+        BasicDBObject document = new BasicDBObject();
+        document.append("type", "urn:epcglobal:epcis:vtype:ReadPoint");
+        FindIterable<BsonDocument> findIterable = collection.find(document);
+        Iterator iterator = findIterable.iterator();
+        JSONArray jsonArray = new JSONArray();
 
-        String businessLocationItems = null;
-        MongoQueryService mongoQueryService = new MongoQueryService();
-        try {
-            businessLocationItems = mongoQueryService.poll(p, userPartyID);
-        } catch (Exception e) {
-            e.printStackTrace();
+        while (iterator.hasNext()) {
+            BsonDocument bsonDocument = (BsonDocument) iterator.next();
+            jsonArray.put(bsonDocument.getString("id").getValue());
         }
 
-        return new ResponseEntity<>(businessLocationItems, HttpStatus.OK);
+        return new ResponseEntity<>(jsonArray, HttpStatus.OK);
     }
 }
