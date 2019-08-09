@@ -6,10 +6,8 @@ import com.mongodb.client.MongoCollection;
 import eu.nimble.service.epcis.services.AuthorizationSrv;
 import io.swagger.annotations.*;
 import org.bson.BsonDocument;
-import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.oliot.epcis.configuration.Configuration;
 import org.oliot.epcis.service.query.mongodb.MongoQueryService;
 import org.oliot.model.epcis.PollParameters;
@@ -21,9 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
 import static com.mongodb.client.model.Filters.eq;
 
@@ -115,9 +111,17 @@ public class MasterDataController extends BaseRestController{
         return new ResponseEntity<>(masterDataItem, HttpStatus.OK);
     }
 
-    @GetMapping("/getAllBusinessLocation")
-    public ResponseEntity<?> getAllBusinessLocation(@ApiParam(value = "The Bearer token provided by the identity service", required = true)
-            @RequestHeader(value="Authorization", required=true) String bearerToken) {
+    @ApiOperation(value = "Get latest information of master data by type and id.", response = String.class)
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "success"),
+            @ApiResponse(code = 400, message = "ObjectId is not valid?"),
+            @ApiResponse(code = 401, message = "Unauthorized. Are the headers correct?"), })
+    @GetMapping("/getLatestMasterDataByTypeAndId")
+    public ResponseEntity<?> getLatestMasterDataByTypeAndId(@ApiParam(value = "The Bearer token provided by the identity service", required = true)
+                @RequestHeader(value="Authorization", required=true) String bearerToken,
+                @ApiParam(value = "The type of master data.", required = true)
+                @RequestParam(required = true) String type,
+                @ApiParam(value = "The id of master data.", required = true)
+                @RequestParam(required = true) String id) {
 
         // Check NIMBLE authorization
         String userPartyID = authorizationSrv.checkToken(bearerToken);
@@ -125,24 +129,46 @@ public class MasterDataController extends BaseRestController{
             return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
         }
 
-        MongoCollection<BsonDocument> collection = Configuration.mongoDatabase.getCollection("MasterData",
-                BsonDocument.class);
-        BasicDBObject document = new BasicDBObject();
-        document.append("type", "urn:epcglobal:epcis:vtype:BusinessLocation");
-        FindIterable<BsonDocument> findIterable = collection.find(document);
-        Iterator iterator = findIterable.iterator();
-        JSONArray jsonArray = new JSONArray();
-
-        while (iterator.hasNext()) {
-            BsonDocument bsonDocument = (BsonDocument) iterator.next();
-            jsonArray.put(bsonDocument.getString("id").getValue());
+        PollParameters p = new PollParameters();
+        p.setMaxElementCount(1);
+        p.setEQ_name(id);
+        p.setMasterDataFormat("JSON");
+        p.setQueryName("SimpleMasterDataQuery");
+        p.setVocabularyName(type);
+        String masterDataItem = null;
+        MongoQueryService mongoQueryService = new MongoQueryService();
+        try {
+            masterDataItem = mongoQueryService.poll(p, userPartyID);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        return new ResponseEntity<>(jsonArray, HttpStatus.OK);
+        return new ResponseEntity<>(masterDataItem, HttpStatus.OK);
     }
 
-    @GetMapping("/getAllReadPoint")
-    public ResponseEntity<?> getAllReadPoint(@ApiParam(value = "The Bearer token provided by the identity service", required = true)
+    @ApiOperation(value = "Get a list of master data BusinessLocation id.", response = String.class)
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "success"),
+            @ApiResponse(code = 400, message = "ObjectId is not valid?"),
+            @ApiResponse(code = 401, message = "Unauthorized. Are the headers correct?"), })
+    @GetMapping("/getBusinessLocationIdList")
+    public ResponseEntity<?> getBusinessLocationIdList(@ApiParam(value = "The Bearer token provided by the identity service", required = true)
+            @RequestHeader(value="Authorization", required=true) String bearerToken) {
+
+        // Check NIMBLE authorization
+        String userPartyID = authorizationSrv.checkToken(bearerToken);
+        if (userPartyID == null) {
+            return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
+        }
+        String type = "urn:epcglobal:epcis:vtype:BusinessLocation";
+        return new ResponseEntity<>(getMasterDataIdByType(type), HttpStatus.OK);
+    }
+
+    @ApiOperation(value = "Get a list of master data ReadPoint id.", response = String.class)
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "success"),
+            @ApiResponse(code = 400, message = "ObjectId is not valid?"),
+            @ApiResponse(code = 401, message = "Unauthorized. Are the headers correct?"), })
+    @GetMapping("/getReadPointIdList")
+    public ResponseEntity<?> getReadPointIdList(@ApiParam(value = "The Bearer token provided by the identity service", required = true)
                                                     @RequestHeader(value="Authorization", required=true) String bearerToken) {
 
         // Check NIMBLE authorization
@@ -151,19 +177,33 @@ public class MasterDataController extends BaseRestController{
             return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
         }
 
+        String type = "urn:epcglobal:epcis:vtype:ReadPoint";
+        return new ResponseEntity<>(getMasterDataIdByType(type), HttpStatus.OK);
+    }
+
+    private JSONArray getMasterDataIdByType(String type) {
+
         MongoCollection<BsonDocument> collection = Configuration.mongoDatabase.getCollection("MasterData",
                 BsonDocument.class);
         BasicDBObject document = new BasicDBObject();
-        document.append("type", "urn:epcglobal:epcis:vtype:ReadPoint");
+        document.append("type", type);
         FindIterable<BsonDocument> findIterable = collection.find(document);
         Iterator iterator = findIterable.iterator();
         JSONArray jsonArray = new JSONArray();
 
         while (iterator.hasNext()) {
             BsonDocument bsonDocument = (BsonDocument) iterator.next();
-            jsonArray.put(bsonDocument.getString("id").getValue());
+            boolean exist = false;
+            String currentValue = bsonDocument.getString("id").getValue();
+            for (int i = 0; i<jsonArray.length(); i++) {
+                if(jsonArray.get(i).equals(currentValue)) {
+                    exist = true;
+                }
+            }
+            if(!exist) {
+                jsonArray.put(currentValue);
+            }
         }
-
-        return new ResponseEntity<>(jsonArray, HttpStatus.OK);
+        return jsonArray;
     }
 }
