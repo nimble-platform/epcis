@@ -147,9 +147,14 @@ public class MongoCaptureUtil {
 	/* added for JSONcapture */
 
 	/* added for Master JSONcapture */
-	public void captureJSONMaster(JSONObject event) {
+	public void captureJSONMaster(JSONObject event, String userID) {
 		MongoCollection<BsonDocument> collection = Configuration.mongoDatabase.getCollection("MasterData",BsonDocument.class);
 		BsonDocument dbObject = BsonDocument.parse(event.toString());
+
+		if (userID != null) {
+			dbObject.put("userPartyID", new BsonString(userID));
+		}
+
 		Date date = new Date();
 //	      This method returns the time in millis
 		dbObject.append("lastUpdated",new BsonDateTime(date.getTime()));
@@ -157,7 +162,6 @@ public class MongoCaptureUtil {
 		log.info(" Master Saved ");
 	}
 	/* added for Master JSONcapture */
-
 
 	public String capture(VocabularyType vocabulary, String userPartyID, Integer gcpLength) {
 		MasterDataWriteConverter mdConverter = new MasterDataWriteConverter();

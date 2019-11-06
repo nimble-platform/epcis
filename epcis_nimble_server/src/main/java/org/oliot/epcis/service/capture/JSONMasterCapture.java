@@ -111,7 +111,7 @@ public class JSONMasterCapture {
                         }
 
                         MongoCaptureUtil m = new MongoCaptureUtil();
-                        m.captureJSONMaster(jsonObjectMaster);
+                        m.captureJSONMaster(jsonObjectMaster, userPartyID);
 
                     }   else {
                         log.info("Json Master Document is not valid. " + " It doesn't have standard event_type");
@@ -143,7 +143,7 @@ public class JSONMasterCapture {
 
                 if (jsonEventElement.has("Vocabulary") == true) {
                     MongoCaptureUtil m = new MongoCaptureUtil();
-                    m.captureJSONMaster(jsonEventElement.getJSONObject("Vocabulary"));
+                    m.captureJSONMaster(jsonEventElement.getJSONObject("Vocabulary"), userPartyID);
                 }
             }
         }
