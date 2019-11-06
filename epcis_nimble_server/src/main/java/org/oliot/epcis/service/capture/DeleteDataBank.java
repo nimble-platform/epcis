@@ -43,11 +43,10 @@ public class DeleteDataBank {
                                             @RequestHeader(value="Authorization", required=true) String bearerToken) {
 
         // Check NIMBLE authorization
-        /*String userPartyID = authorizationSrv.checkToken(bearerToken);
+        String userPartyID = authorizationSrv.checkToken(bearerToken);
         if (userPartyID == null) {
             return new ResponseEntity<>(new String("Invalid AccessToken"), HttpStatus.UNAUTHORIZED);
-        }*/
-        String userPartyID = "user1";
+        }
 
         if(type.equals("Data")) {
             String[] dataTypes = {"EventData", "MasterData", "ProductionProcessTemplate"};
